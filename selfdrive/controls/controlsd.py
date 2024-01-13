@@ -610,7 +610,7 @@ class Controls:
     # Update VehicleModel
     lp = self.sm['liveParameters']
     x = max(lp.stiffnessFactor, 0.1)
-    sr = max(lp.steerRatio, 0.1)
+    sr = max(self.steer_ratio, 0.1)
     self.VM.update_params(x, sr)
 
     # Update Torque Params
@@ -987,6 +987,9 @@ class Controls:
     self.goat_scream = self.params.get_bool("GoatScream") and frog_sounds
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
+
+    lateral_tune = self.params.get_bool("LateralTune")
+    self.steer_ratio = self.params.get_int("SteerRatio") / 100 if lateral_tune else self.params.get_int("SteerRatioStock") / 100
 
     longitudinal_tune = self.params.get_bool("LongitudinalTune")
     self.sport_plus = self.params.get_int("AccelerationProfile") == 3 and longitudinal_tune
