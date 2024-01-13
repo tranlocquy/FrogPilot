@@ -341,6 +341,7 @@ void UIState::updateStatus() {
     started_prev = scene.started;
     scene.world_objects_visible = false;
     emit offroadTransition(!scene.started);
+    wifi->setTetheringEnabled(scene.started && scene.tethering_enabled);
   }
 }
 
@@ -363,6 +364,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
+
+  wifi = new WifiManager(this);
 
   scene.screen_brightness = params.getInt("ScreenBrightness");
 
