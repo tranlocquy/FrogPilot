@@ -189,6 +189,7 @@ typedef struct UIScene {
   bool map_open;
   bool model_ui;
   bool road_name_ui;
+  bool rotating_wheel;
   bool show_driver_camera;
   bool show_fps;
   bool tethering_enabled;
@@ -214,6 +215,7 @@ typedef struct UIScene {
   int obstacle_distance;
   int obstacle_distance_stock;
   int screen_brightness;
+  int steering_angle_deg;
   int stopped_equivalence;
   int wheel_icon;
   QPolygonF track_adjacent_vertices[6];
