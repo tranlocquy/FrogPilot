@@ -162,6 +162,7 @@ private:
   bool experimentalMode;
   bool leadInfo;
   bool mapOpen;
+  bool roadNameUI;
   bool showDriverCamera;
   bool turnSignalLeft;
   bool turnSignalRight;
