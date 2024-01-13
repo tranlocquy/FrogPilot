@@ -79,7 +79,10 @@ class Controls:
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
+    self.random_event_triggered = False
     self.stopped_for_light_previously = False
+
+    self.random_event_timer = 0
 
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
@@ -623,6 +626,14 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     frogpilot_long_plan = self.sm['frogpilotLongitudinalPlan']
 
+    # Reset the Random Event flag
+    if self.random_event_triggered:
+      self.random_event_timer += 1
+      if self.random_event_timer >= 400:
+        self.random_event_triggered = False
+        self.random_event_timer = 0
+        self.params_memory.remove("CurrentRandomEvent")
+
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
@@ -724,8 +735,13 @@ class Controls:
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
         max_torque = abs(self.last_actuators.steer) > 0.99
-        if undershooting and turning and good_speed and max_torque:
-          lac_log.active and self.events.add(FrogPilotEventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
+        if undershooting and turning and good_speed and max_torque and not self.random_event_triggered:
+          if self.sm.frame % 10000 == 0:
+            lac_log.active and self.events.add(FrogPilotEventName.firefoxSteerSaturated)
+            self.params_memory.put_int("CurrentRandomEvent", 1)
+            self.random_event_triggered = True
+          else:
+            lac_log.active and self.events.add(FrogPilotEventName.frogSteerSaturated if self.goat_scream else EventName.steerSaturated)
       elif lac_log.saturated:
         dpath_points = lat_plan.dPathPoints
         if len(dpath_points):
@@ -997,6 +1013,8 @@ class Controls:
     self.pause_lateral_on_signal = self.params.get_int("PauseLateralOnSignal") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruise") and quality_of_life
     self.set_speed_offset = self.params.get_int("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH) if quality_of_life else 0
+
+    self.random_events = self.params.get_bool("RandomEvents")
 
 def main():
   controls = Controls()
