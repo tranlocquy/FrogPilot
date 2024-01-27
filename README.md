@@ -199,7 +199,7 @@ As for feature requests, these are my guidelines:
 Discord
 ------
 
-[Join the FrogPilot Community Discord for easy access to updates, bug reporting, feature requests, future planned updates, and other FrogPilot related discussions!](https://l.linklyhq.com/l/1t3Il)
+[Join the FrogPilot Community Discord for easy access to updates, bug reporting, feature requests, future planned updates, and other FrogPilot related discussions!](discord.frogpilot.download)
 
 Donations
 ------
