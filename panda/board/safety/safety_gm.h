@@ -95,9 +95,10 @@ enum {
 enum {GM_ASCM, GM_CAM, GM_SDGM} gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
-bool gm_cc_long = false;
 bool gm_has_acc = true;
 bool gm_pedal_long = false;
+bool gm_cc_long = false;
+bool gm_skip_relay_check = false;
 bool gm_force_ascm = false;
 
 static void handle_gm_wheel_buttons(const CANPacket_t *to_push) {
@@ -123,6 +124,7 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
     // SDGM buttons are on bus 2
     handle_gm_wheel_buttons(to_push);
   }
+
   if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
 
@@ -152,11 +154,8 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
     }
 
     if ((addr == 0xC9) && ((gm_hw == GM_CAM) || (gm_hw == GM_SDGM))) {
-      brake_pressed = GET_BIT(to_push, 40U) != 0U;
-    }
-
-    if (addr == 0xC9) {
-      acc_main_on = GET_BIT(to_push, 29U) != 0U;
+      acc_main_on = GET_BIT(to_push, 29U);
+      brake_pressed = GET_BIT(to_push, 40U);
     }
 
     if (addr == 0x1C4) {
@@ -190,6 +189,7 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
       int gas_interceptor = GM_GET_INTERCEPTOR(to_push);
       gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
       gas_interceptor_prev = gas_interceptor;
+//      gm_pcm_cruise = false;
     }
 
     bool stock_ecu_detected = (addr == 0x180);  // ASCMLKASteeringCmd
@@ -312,7 +312,7 @@ static safety_config gm_init(uint16_t param) {
     } else {
       gm_long_limits = &GM_ASCM_LONG_LIMITS;
     }
-  } else if ((gm_hw == GM_CAM) || (gm_hw == GM_SDGM)) {
+  } else if (gm_hw == GM_CAM) {
     if (sport_mode) {
       gm_long_limits = &GM_CAM_LONG_LIMITS_SPORT;
     } else {
@@ -325,6 +325,7 @@ static safety_config gm_init(uint16_t param) {
   gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG) && !gm_cc_long;
   gm_pcm_cruise = ((gm_hw == GM_CAM) && (!gm_cam_long || gm_cc_long) && !gm_force_ascm && !gm_pedal_long) || (gm_hw == GM_SDGM);
+  gm_skip_relay_check = GET_FLAG(param, GM_PARAM_NO_CAMERA);
   gm_has_acc = !GET_FLAG(param, GM_PARAM_NO_ACC);
   enable_gas_interceptor = GET_FLAG(param, GM_PARAM_PEDAL_INTERCEPTOR);
 
