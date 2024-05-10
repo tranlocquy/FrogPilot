@@ -232,6 +232,7 @@ class CarInterfaceBase(ABC):
 
     lateral_tune = self.params.get_bool("LateralTune")
     self.use_nnff = not comma_nnff_supported and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
+    self.use_nnff_lite = not comma_nnff_supported and not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
 
     self.belowSteerSpeed_shown = False
     self.disable_belowSteerSpeed = False
