@@ -1,4 +1,4 @@
-[![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
+[![openpilot on the comma 3X](https://i.imgur.com/6l2qbf5.png)](https://comma.ai/shop/comma-3x)
 
 What is openpilot?
 ------
@@ -13,53 +13,128 @@ What is openpilot?
   </tr>
 </table>
 
-To start using openpilot in a car
+What is FrogPilot? 🐸
 ------
 
-To use openpilot in a car, you need four things:
-1. **Supported Device:** a comma 3/3X, available at [comma.ai/shop](https://comma.ai/shop/comma-3x).
-2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software. Use the URL `openpilot.comma.ai` to install the release version.
-3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md).
-4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
+FrogPilot is a fully open-sourced fork of openpilot, featuring clear and concise commits striving to be a resource for the openpilot developer community. It thrives on contributions from both users and developers, focusing on a collaborative, community-led approach to deliver an advanced openpilot experience for everyone!
 
-We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup). Note that it's possible to run openpilot on [other hardware](https://blog.comma.ai/self-driving-car-for-free/), although it's not plug-and-play.
+------
+FrogPilot was last updated on:
 
-To start developing openpilot
+**July 1st, 2024**
+
+Features
 ------
 
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot).
+FrogPilot offers a wide range of customizable features that are easily toggled on or off to suit your preferences. Whether you want a completely stock openpilot experience, or want to add some fun and personal touches, FrogPilot has you covered! Some of the features include:
 
-* Join the [community Discord](https://discord.comma.ai)
-* Check out [the contributing docs](docs/CONTRIBUTING.md)
-* Check out the [openpilot tools](tools/)
-* Read about the [development workflow](docs/WORKFLOW.md)
-* Code documentation lives at https://docs.comma.ai
-* Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
-
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md) for external contributors.
-
-Safety and Testing
-----
-
-* openpilot observes [ISO26262](https://en.wikipedia.org/wiki/ISO_26262) guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
-* openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
-* The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
-* panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
-* Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
-* panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
-
-User Data and comma Account
 ------
 
-By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
+<details>
+  <summary>Device</summary>
+  <blockquote>
+  </blockquote>
+</details>
 
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
+<details>
+  <summary>Network</summary>
+  <blockquote>
+  </blockquote>
+</details>
 
-openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
+<details>
+  <summary>Toggles</summary>
+  <blockquote>
+  </blockquote>
+</details>
 
-By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+<details>
+  <summary>Software</summary>
+  <blockquote>
+  </blockquote>
+</details>
+
+<details>
+  <summary>Controls</summary>
+  <blockquote>
+    <details>
+      <summary>Always On Lateral</summary>
+      <p>Maintain openpilot lateral control when the brake or gas pedals are used. Deactivation occurs only through the 'Cruise Control' button.</p>
+      <ul>
+        <li><strong>Enable On Cruise Main:</strong> Enable "Always On Lateral" by clicking your 'Cruise Control' button without requiring openpilot to be enabled first.</li>
+        <li><strong>Pause On Brake:</strong> Pause "Always On Lateral" when the brake pedal is being pressed below the set speed.</li>
+        <li><strong>Hide the Status Bar:</strong> Don't use the status bar for "Always On Lateral".</li>
+      </ul>
+    </details>
+  </blockquote>
+</details>
+
+<details>
+  <summary>Navigation</summary>
+  <blockquote>
+  </blockquote>
+</details>
+
+<details>
+  <summary>Vehicles</summary>
+  <blockquote>
+  </blockquote>
+</details>
+
+<details>
+  <summary>Visuals</summary>
+  <blockquote>
+  </blockquote>
+</details>
+
+<details>
+  <summary>Other</summary>
+  <blockquote>
+  </blockquote>
+</details>
+
+How to Install
+------
+
+Easiest way to install FrogPilot is via this URL at the installation screen:
+
+```
+frogpilot.download
+```
+
+DO NOT install the "FrogPilot-Development" branch. I'm constantly breaking things on there, so unless you don't want to use openpilot, NEVER install it!
+
+![](https://i.imgur.com/swr0kqJ.png)
+
+Bug reports / Feature Requests
+------
+
+If you encounter any issues or bugs while using FrogPilot, or if you have any suggestions for new features or improvements, please don't hesitate to post about it on the Discord! I'm always looking for ways to improve the fork and provide a better experience for everyone!
+
+To report a bug or request a new feature, make a post in the #bug-reports or #feature-requests channel respectively on the FrogPilot Discord. Please provide as much detail as possible about the issue you're experiencing or the feature you'd like to see added. Photos, videos, log files, or other relevant information are very helpful!
+
+I will do my best to respond to bug reports and feature requests in a timely manner, but please understand that I may not be able to address every request immediately. Your feedback and suggestions are valuable, and I appreciate your help in making FrogPilot the best it can be!
+
+Discord
+------
+
+[Join the FrogPilot Community Discord!](https://discord.gg/frogpilot)
+
+Credits
+------
+
+* [AlexandreSato](https://github.com/AlexandreSato)
+* [Crwusiz](https://github.com/crwusiz)
+* [DragonPilot](https://github.com/dragonpilot-community)
+* [ErichMoraga](https://github.com/ErichMoraga)
+* [Garrettpall](https://github.com/garrettpall)
+* [Mike8643](https://github.com/mike8643)
+* [Neokii](https://github.com/Neokii)
+* [OPGM](https://github.com/opgm)
+* [OPKR](https://github.com/openpilotkr)
+* [Pfeiferj](https://github.com/pfeiferj)
+* [ServerDummy](https://github.com/ServerDummy)
+* [Twilsonco](https://github.com/twilsonco)
 
 Licensing
 ------
