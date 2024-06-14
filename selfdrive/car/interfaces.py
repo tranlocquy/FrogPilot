@@ -17,7 +17,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
+from openpilot.selfdrive.controls.lib.drive_helpers import CRUISE_LONG_PRESS, V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -118,7 +118,10 @@ class CarInterfaceBase(ABC):
     self.belowSteerSpeed_shown = False
     self.disable_belowSteerSpeed = False
     self.disable_resumeRequired = False
+    self.prev_distance_button = False
     self.resumeRequired_shown = False
+
+    self.gap_counter = 0
 
   def apply(self, c: car.CarControl, now_nanos: int, frogpilot_toggles) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
     return self.CC.update(c, self.CS, now_nanos, frogpilot_toggles)
@@ -266,6 +269,10 @@ class CarInterfaceBase(ABC):
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
+    distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
+    fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_toggles)
+    self.prev_distance_button = distance_button
+
     # copy back for next iteration
     if self.CS is not None:
       self.CS.out = ret.as_reader()
@@ -350,6 +357,22 @@ class CarInterfaceBase(ABC):
 
     return events
 
+  def frogpilot_distance_functions(self, distance_button, prev_distance_button, frogpilot_toggles):
+    if distance_button:
+      self.gap_counter += 1
+    elif not prev_distance_button:
+      self.gap_counter = 0
+
+    if self.gap_counter == CRUISE_LONG_PRESS * 1.2 and frogpilot_toggles.experimental_mode_via_distance:
+      if frogpilot_toggles.conditional_experimental_mode:
+        conditional_status = self.params_memory.get_int("CEStatus")
+        override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 1 if conditional_status >= 7 else 2
+        self.params_memory.put_int("CEStatus", override_value)
+      else:
+        experimental_mode = self.params.get_bool("ExperimentalMode")
+        self.params.put_bool("ExperimentalMode", not experimental_mode)
+
+    return self.gap_counter >= CRUISE_LONG_PRESS
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP):
@@ -392,6 +415,9 @@ class CarStateBase(ABC):
     # FrogPilot variables
     self.lkas_enabled = False
     self.lkas_previously_enabled = False
+
+    self.prev_distance_button = 0
+    self.distance_button = 0
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
