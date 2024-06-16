@@ -50,6 +50,7 @@ void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model_data) {
     const auto &lead = model_data.getLeadsV3()[i];
     if (s->scene.has_lead) {
       float d_rel = lead.getX()[0];
+      s->scene.lead_distance = d_rel;
       float y_rel = lead.getY()[0];
       float z = line.getZ()[get_path_length_idx(line, d_rel)];
       calib_frame_to_full_frame(s, d_rel, y_rel, z + 1.22, &s->scene.lead_vertices[i]);
@@ -84,6 +85,7 @@ void update_model(UIState *s,
                   const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
   auto plan_position = plan.getPosition();
+  scene.model_length = model.getPosition().getX()[33 - 1];
   if (plan_position.getX().size() < model.getPosition().getX().size()) {
     plan_position = model.getPosition();
   }
