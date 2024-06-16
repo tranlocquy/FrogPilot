@@ -186,6 +186,7 @@ typedef struct UIScene {
   bool speed_limit_overridden;
   bool standstill;
   bool static_pedals_on_ui;
+  bool stopped_timer;
   bool tethering_enabled;
   bool traffic_mode;
   bool traffic_mode_active;
@@ -237,6 +238,7 @@ typedef struct UIScene {
   int map_style;
   int obstacle_distance;
   int obstacle_distance_stock;
+  int started_timer;
   int steering_angle_deg;
   int stopped_equivalence;
   int tethering_config;
