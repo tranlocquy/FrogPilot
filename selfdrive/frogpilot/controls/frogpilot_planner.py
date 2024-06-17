@@ -174,7 +174,7 @@ class FrogPilotPlanner:
     self.v_cruise = self.update_v_cruise(carState, controlsState, frogpilotCarState, frogpilotNavigation, liveLocationKalman, modelData, v_cruise, v_ego, frogpilot_toggles)
 
     if frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.green_light_alert:
-      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, lead_distance, self.lead_one, modelData, self.road_curvature, self.slower_lead, v_ego, v_lead, frogpilot_toggles)
+      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, self.lead_one, modelData, self.road_curvature, self.slower_lead, v_ego, v_lead, frogpilot_toggles)
 
     self.frame += 1
 
