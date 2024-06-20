@@ -5,7 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import NAVIGATION_MODELS, RADARLESS_MODELS
 
 CITY_SPEED_LIMIT = 25  # 55mph is typically the minimum speed for highways
 CRUISING_SPEED = 5     # Roughly the speed cars go when not touching the gas while in drive
@@ -55,7 +55,9 @@ class FrogPilotVariables:
 
     if not started:
       toggle.model = self.params.get("Model", block=openpilot_installed, encoding='utf-8')
+      toggle.navigationless_model = toggle.model not in NAVIGATION_MODELS
       toggle.radarless_model = toggle.model in RADARLESS_MODELS
+      toggle.secretgoodopenpilot_model = toggle.model == "secret-good-openpilot"
 
     toggle.alert_volume_control = self.params.get_bool("AlertVolumeControl")
     toggle.disengage_volume = self.params.get_int("DisengageVolume") if toggle.alert_volume_control else 100
