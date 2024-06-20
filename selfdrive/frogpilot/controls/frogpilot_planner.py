@@ -137,11 +137,17 @@ class FrogPilotPlanner:
       )
 
     if self.tracking_lead:
+      self.safe_obstacle_distance_stock = int(get_safe_obstacle_distance(v_ego, self.t_follow))
       self.update_follow_values(lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
+      self.safe_obstacle_distance = int(get_safe_obstacle_distance(v_ego, self.t_follow))
+      self.stopped_equivalence_factor = int(get_stopped_equivalence_factor(v_lead))
     else:
       self.acceleration_jerk = self.base_acceleration_jerk
       self.danger_jerk = self.base_danger_jerk
       self.speed_jerk = self.base_speed_jerk
+      self.safe_obstacle_distance = 0
+      self.safe_obstacle_distance_stock = 0
+      self.stopped_equivalence_factor = 0
 
     check_lane_width = frogpilot_toggles.adjacent_lanes or frogpilot_toggles.blind_spot_path or frogpilot_toggles.lane_detection
     if check_lane_width and v_ego >= frogpilot_toggles.minimum_lane_change_speed:
@@ -271,6 +277,11 @@ class FrogPilotPlanner:
     frogpilotPlan.vtscControllingCurve = bool(self.mtsc_target > self.vtsc_target)
 
     frogpilotPlan.conditionalExperimentalActive = self.cem.experimental_mode
+
+    frogpilotPlan.desiredFollowDistance = self.safe_obstacle_distance - self.stopped_equivalence_factor
+    frogpilotPlan.safeObstacleDistance = self.safe_obstacle_distance
+    frogpilotPlan.safeObstacleDistanceStock = self.safe_obstacle_distance_stock
+    frogpilotPlan.stoppedEquivalenceFactor = self.stopped_equivalence_factor
 
     frogpilotPlan.laneWidthLeft = self.lane_width_left
     frogpilotPlan.laneWidthRight = self.lane_width_right
