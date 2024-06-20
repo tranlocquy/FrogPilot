@@ -24,7 +24,7 @@ class FrogPilotPlanner:
     self.danger_jerk = 0
     self.speed_jerk = 0
 
-  def update(self, carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, modelData, radarState):
+  def update(self, carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, modelData, radarState, frogpilot_toggles):
     self.lead_one = radarState.leadOne
 
     v_cruise_kph = min(controlsState.vCruise, V_CRUISE_UNSET)
@@ -51,20 +51,20 @@ class FrogPilotPlanner:
     self.t_follow = get_T_FOLLOW(controlsState.personality)
 
     if self.tracking_lead:
-      self.update_follow_values(lead_distance, stopping_distance, v_ego, v_lead)
+      self.update_follow_values(lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
     else:
       self.acceleration_jerk = self.base_acceleration_jerk
       self.danger_jerk = self.base_danger_jerk
       self.speed_jerk = self.base_speed_jerk
 
-    self.v_cruise = self.update_v_cruise(carState, controlsState, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego)
+    self.v_cruise = self.update_v_cruise(carState, controlsState, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego, frogpilot_toggles)
 
     if v_ego > CRUISING_SPEED:
       self.tracking_lead = self.lead_one.status
 
-  def update_follow_values(self, lead_distance, stopping_distance, v_ego, v_lead):
+  def update_follow_values(self, lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles):
 
-  def update_v_cruise(self, carState, controlsState, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego):
+  def update_v_cruise(self, carState, controlsState, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego, frogpilot_toggles):
     v_cruise_cluster = max(controlsState.vCruiseCluster, v_cruise) * CV.KPH_TO_MS
     v_cruise_diff = v_cruise_cluster - v_cruise
 
@@ -76,7 +76,7 @@ class FrogPilotPlanner:
 
     return min(filtered_targets)
 
-  def publish(self, sm, pm):
+  def publish(self, sm, pm, frogpilot_toggles):
     frogpilot_plan_send = messaging.new_message('frogpilotPlan')
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotPlan = frogpilot_plan_send.frogpilotPlan
