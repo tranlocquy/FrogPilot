@@ -415,6 +415,8 @@ class CarInterfaceBase(ABC):
 
     distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
     fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_toggles)
+    fp_ret.ecoGear |= ret.gearShifter == GearShifter.eco
+    fp_ret.sportGear |= ret.gearShifter == GearShifter.sport
     fp_ret.trafficModeActive = frogpilot_toggles.traffic_mode and self.traffic_mode_active
     self.prev_distance_button = distance_button
 

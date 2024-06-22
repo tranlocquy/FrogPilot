@@ -71,27 +71,42 @@ class FrogPilotPlanner:
     lead_distance = self.lead_one.dRel - distance_offset
     stopping_distance = STOP_DISTANCE + distance_offset
 
+    eco_gear = frogpilotCarState.ecoGear
+    sport_gear = frogpilotCarState.sportGear
+
     if self.lead_one.status and frogpilot_toggles.aggressive_acceleration:
       self.max_accel = float(np.clip(self.lead_one.aLeadK, get_max_accel_sport(v_ego), 2.0 if v_ego >= 20 else 4.0))
-    elif frogpilot_toggles.acceleration_profile == 1:
-      self.max_accel = get_max_accel_eco(v_ego)
-    elif frogpilot_toggles.acceleration_profile in (2, 3):
-      self.max_accel = get_max_accel_sport(v_ego)
-    elif controlsState.experimentalMode:
-      self.max_accel = ACCEL_MAX
+    elif frogpilot_toggles.map_acceleration and (eco_gear or sport_gear):
+      if eco_gear:
+        self.max_accel = get_max_accel_eco(v_ego)
+      else:
+        self.max_accel = get_max_accel_sport(v_ego)
     else:
-      self.max_accel = get_max_accel(v_ego)
+      if frogpilot_toggles.acceleration_profile == 1:
+        self.max_accel = get_max_accel_eco(v_ego)
+      elif frogpilot_toggles.acceleration_profile in (2, 3):
+        self.max_accel = get_max_accel_sport(v_ego)
+      elif controlsState.experimentalMode:
+        self.max_accel = ACCEL_MAX
+      else:
+        self.max_accel = get_max_accel(v_ego)
 
     if controlsState.experimentalMode:
       self.min_accel = ACCEL_MIN
     elif v_cruise_changed:
       self.min_accel = A_CRUISE_MIN
-    elif frogpilot_toggles.deceleration_profile == 1:
-      self.min_accel = A_CRUISE_MIN_ECO
-    elif frogpilot_toggles.deceleration_profile == 2:
-      self.min_accel = A_CRUISE_MIN_SPORT
+    elif frogpilot_toggles.map_deceleration and (eco_gear or sport_gear):
+      if eco_gear:
+        self.min_accel = A_CRUISE_MIN_ECO
+      else:
+        self.min_accel = A_CRUISE_MIN_SPORT
     else:
-      self.min_accel = A_CRUISE_MIN
+      if frogpilot_toggles.deceleration_profile == 1:
+        self.min_accel = A_CRUISE_MIN_ECO
+      elif frogpilot_toggles.deceleration_profile == 2:
+        self.min_accel = A_CRUISE_MIN_SPORT
+      else:
+        self.min_accel = A_CRUISE_MIN
 
     if frogpilotCarState.trafficModeActive:
       self.base_acceleration_jerk = interp(v_ego, TRAFFIC_MODE_BP, frogpilot_toggles.traffic_mode_jerk_acceleration)
