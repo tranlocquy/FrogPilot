@@ -96,6 +96,13 @@ def manager_init(frogpilot_functions) -> None:
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
 
     # Default FrogPilot parameters
+    ("Accel1", "4.0"),
+    ("Accel2", "3.5"),
+    ("Accel3", "3.0"),
+    ("Accel4", "1.0"),
+    ("Accel5", "0.8"),
+    ("Accel6", "0.8"),
+    ("Accel7", "0.6"),
     ("AccelerationPath", "1"),
     ("AccelerationProfile", "3"),
     ("AdjacentPath", "0"),

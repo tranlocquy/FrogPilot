@@ -29,6 +29,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   isRelease = branch == "FrogPilot";
 
   const std::vector<std::tuple<QString, QString, QString, QString>> controlToggles {
+    {"Accel1", tr("Acceleration Rate - 0-11mph"), tr(""), ""},
+    {"Accel2", tr("Acceleration Rate - 11-22mph"), tr(""), ""},
+    {"Accel3", tr("Acceleration Rate - 22-34mph"), tr(""), ""},
+    {"Accel4", tr("Acceleration Rate - 34-45mph"), tr(""), ""},
+    {"Accel5", tr("Acceleration Rate - 45-56mph"), tr(""), ""},
+    {"Accel6", tr("Acceleration Rate - 56-89mph"), tr(""), ""},
+    {"Accel7", tr("Acceleration Rate - 89mph+"), tr(""), ""},
+
     {"AlwaysOnLateral", tr("Always on Lateral"), tr("Maintain openpilot lateral control when the brake or gas pedals are used.\n\nDeactivation occurs only through the 'Cruise Control' button."), "../frogpilot/assets/toggle_icons/icon_always_on_lateral.png"},
     {"AlwaysOnLateralLKAS", tr("Control Via LKAS Button"), tr("Enable or disable 'Always On Lateral' by clicking your 'LKAS' button."), ""},
     {"AlwaysOnLateralMain", tr("Enable On Cruise Main"), tr("Enable 'Always On Lateral' by clicking your 'Cruise Control' button without requiring openpilot to be enabled first."), ""},
@@ -152,7 +160,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
   for (const auto &[param, title, desc, icon] : controlToggles) {
     AbstractControl *controlToggle;
 
-    if (param == "AlwaysOnLateral") {
+    if (param == "Accel1" || param == "Accel2" || param == "Accel3" || param == "Accel4" || param == "Accel5" || param == "Accel6" || param == "Accel7") {
+      controlToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.1, 4.0, std::map<int, QString>(), this, false, tr(" m/s"), 1, 0.1);
+
+    } else if (param == "AlwaysOnLateral") {
       FrogPilotParamManageControl *aolToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
       QObject::connect(aolToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
         openParentToggle();

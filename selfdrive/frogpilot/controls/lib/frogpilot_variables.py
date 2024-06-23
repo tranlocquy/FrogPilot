@@ -172,6 +172,13 @@ class FrogPilotVariables:
     toggle.smoother_braking = longitudinal_tune and self.params.get_bool("SmoothBraking")
     toggle.sport_plus = car_name != "gm" and longitudinal_tune and toggle.acceleration_profile == 3
     toggle.traffic_mode = longitudinal_tune and self.params.get_bool("TrafficMode")
+    toggle.accel1 = self.params.get_float("Accel1")
+    toggle.accel2 = self.params.get_float("Accel2")
+    toggle.accel3 = self.params.get_float("Accel3")
+    toggle.accel4 = self.params.get_float("Accel4")
+    toggle.accel5 = self.params.get_float("Accel5")
+    toggle.accel6 = self.params.get_float("Accel6")
+    toggle.accel7 = self.params.get_float("Accel7")
 
     toggle.map_turn_speed_controller = openpilot_longitudinal and self.params.get_bool("MTSCEnabled")
     toggle.mtsc_curvature_check = toggle.map_turn_speed_controller and self.params.get_bool("MTSCCurvatureCheck")

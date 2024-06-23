@@ -35,6 +35,9 @@ def get_max_accel_eco(v_ego):
 def get_max_accel_sport(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP_CUSTOM, A_CRUISE_MAX_VALS_SPORT)
 
+def get_max_accel_sport_testing(v_ego, ft):
+  return interp(v_ego, A_CRUISE_MAX_BP_CUSTOM, [ft.accel1, ft.accel2, ft.accel3, ft.accel4, ft.accel5, ft.accel6, ft.accel7])
+
 class FrogPilotPlanner:
   def __init__(self):
     self.params_memory = Params("/dev/shm/params")
@@ -85,17 +88,17 @@ class FrogPilotPlanner:
     sport_gear = frogpilotCarState.sportGear
 
     if self.lead_one.status and frogpilot_toggles.aggressive_acceleration:
-      self.max_accel = float(np.clip(self.lead_one.aLeadK, get_max_accel_sport(v_ego), 2.0 if v_ego >= 20 else 4.0))
+      self.max_accel = float(np.clip(self.lead_one.aLeadK, get_max_accel_sport_testing(v_ego, frogpilot_toggles), 2.0 if v_ego >= 20 else 4.0))
     elif frogpilot_toggles.map_acceleration and (eco_gear or sport_gear):
       if eco_gear:
         self.max_accel = get_max_accel_eco(v_ego)
       else:
-        self.max_accel = get_max_accel_sport(v_ego)
+        self.max_accel = get_max_accel_sport_testing(v_ego, frogpilot_toggles)
     else:
       if frogpilot_toggles.acceleration_profile == 1:
         self.max_accel = get_max_accel_eco(v_ego)
       elif frogpilot_toggles.acceleration_profile in (2, 3):
-        self.max_accel = get_max_accel_sport(v_ego)
+        self.max_accel = get_max_accel_sport_testing(v_ego, frogpilot_toggles)
       elif controlsState.experimentalMode:
         self.max_accel = ACCEL_MAX
       else:
