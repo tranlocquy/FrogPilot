@@ -63,48 +63,32 @@ def report_tombstone(fn: str, message: str, contents: str) -> None:
       time.sleep(no_internet * 60)
 
 
-def chunk_data(data):
-  return [[item] for item in data]
-
-
-def format_params(params):
-  return [f"{key.decode() if isinstance(key, bytes) else key}: "
-          f"{value.decode() if isinstance(value, bytes) else format(value, '.12g').rstrip('0').rstrip('.') if isinstance(value, float) else value}"
-          for key, value in sorted(params.items())]
-
-
-def get_frogpilot_params_by_type(param_type, params):
-  return {key.decode() if isinstance(key, bytes) else key:
-          (params.get(key).decode() if isinstance(params.get(key), bytes) else params.get(key) or '0')
-          for key in params.all_keys() if params.get_key_type(key) & param_type}
-
-
-def set_sentry_scope(scope, chunks, label):
-  scope.set_extra(label, '\n'.join(chunk[0] for chunk in chunks))
-
-
 def capture_fingerprint(candidate, params, blocked=False):
   bind_user()
 
-  param_types = [
-    ParamKeyType.FROGPILOT_CONTROLS,
-    ParamKeyType.FROGPILOT_VEHICLES,
-    ParamKeyType.FROGPILOT_VISUALS,
-    ParamKeyType.FROGPILOT_OTHER,
-    ParamKeyType.FROGPILOT_TRACKING
-  ]
-  labels = ["FrogPilot Controls", "FrogPilot Vehicles", "FrogPilot Visuals", "FrogPilot Other", "FrogPilot Tracking"]
+  param_types = {
+    "FrogPilot Controls": ParamKeyType.FROGPILOT_CONTROLS,
+    "FrogPilot Vehicles": ParamKeyType.FROGPILOT_VEHICLES,
+    "FrogPilot Visuals": ParamKeyType.FROGPILOT_VISUALS,
+    "FrogPilot Other": ParamKeyType.FROGPILOT_OTHER,
+    "FrogPilot Tracking": ParamKeyType.FROGPILOT_TRACKING
+  }
 
-  chunks_labels = [(chunk_data(format_params(get_frogpilot_params_by_type(t, params))), label)
-                   for t, label in zip(param_types, labels)]
+  matched_params = {label: {} for label in param_types}
+  for key in params.all_keys():
+    for label, key_type in param_types.items():
+      if params.get_key_type(key) & key_type:
+        matched_params[label][key] = params.get(key)
 
   no_internet = 0
   while True:
     if sentry_pinged():
-      for chunks, label in chunks_labels:
-        with sentry_sdk.configure_scope() as scope:
-          set_sentry_scope(scope, chunks, label)
-          scope.fingerprint = [candidate, HARDWARE.get_serial()]
+      with sentry_sdk.configure_scope() as scope:
+        scope.fingerprint = [candidate, HARDWARE.get_serial()]
+
+        for label, key_values in matched_params.items():
+          formatted_params = "\n".join([f"{key}: {value}" for key, value in key_values.items()])
+          scope.set_extra(label, formatted_params)
 
       if blocked:
         sentry_sdk.capture_message("Blocked user from using the development branch", level='error')
