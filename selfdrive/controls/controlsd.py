@@ -29,10 +29,11 @@ from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, S
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 from openpilot.system.hardware import HARDWARE
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CRUISING_SPEED, FrogPilotVariables
 from openpilot.selfdrive.frogpilot.controls.lib.speed_limit_controller import SpeedLimitController
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -196,6 +197,7 @@ class Controls:
     self.onroad_distance_pressed = False
     self.openpilot_crashed_triggered = False
     self.previous_traffic_mode = False
+    self.previously_enabled = False
     self.speed_check = False
     self.speed_limit_changed = False
     self.update_toggles = False
@@ -908,6 +910,13 @@ class Controls:
       t.join()
 
   def update_frogpilot_events(self, CS):
+    if self.frogpilot_toggles.green_light_alert and self.previously_enabled and CS.standstill:
+      green_light = self.sm['modelV2'].position.x[ModelConstants.IDX_N - 1] > ModelConstants.IDX_N
+      green_light &= not self.sm['longitudinalPlan'].hasLead
+
+      if green_light:
+        self.events.add(EventName.greenLight)
+
     if not self.openpilot_crashed_triggered and os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
       self.events.add(EventName.openpilotCrashed)
       self.openpilot_crashed_triggered = True
@@ -971,6 +980,9 @@ class Controls:
           self.params_memory.put_int("CEStatus", override_value)
         else:
           self.params.put_bool_nonblocking("ExperimentalMode", not self.experimental_mode)
+
+    self.previously_enabled |= (self.enabled or self.always_on_lateral_active) and CS.vEgo > CRUISING_SPEED
+    self.previously_enabled &= driving_gear
 
     self.speed_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed
     self.speed_check |= self.frogpilot_toggles.pause_lateral_below_signal and not (CS.leftBlinker or CS.rightBlinker)
