@@ -9,7 +9,7 @@ from typing import Any, NamedTuple
 from collections.abc import Callable
 from functools import cache
 
-from cereal import car
+from cereal import car, custom
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
@@ -23,6 +23,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 ButtonType = car.CarState.ButtonEvent.Type
+FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
@@ -235,6 +236,7 @@ class CarInterfaceBase(ABC):
     self.use_nnff = not comma_nnff_supported and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
     self.use_nnff_lite = not comma_nnff_supported and not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
 
+    self.always_on_lateral_disabled = False
     self.belowSteerSpeed_shown = False
     self.disable_belowSteerSpeed = False
     self.disable_resumeRequired = False
@@ -413,6 +415,7 @@ class CarInterfaceBase(ABC):
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
+    fp_ret.alwaysOnLateralDisabled = self.always_on_lateral_disabled
     distance_button = self.CS.distance_button or self.params_memory.get_bool("OnroadDistanceButtonPressed")
     fp_ret.distanceLongPressed = self.frogpilot_distance_functions(distance_button, self.prev_distance_button, frogpilot_toggles)
     fp_ret.ecoGear |= ret.gearShifter == GearShifter.eco
@@ -428,7 +431,7 @@ class CarInterfaceBase(ABC):
 
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
+                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise), frogpilot_toggles=None):
     events = Events()
 
     if cs_out.doorOpen:
@@ -473,6 +476,10 @@ class CarInterfaceBase(ABC):
       # Disable on rising and falling edge of cancel for both stock and OP long
       if b.type == ButtonType.cancel:
         events.add(EventName.buttonCancel)
+
+      # FrogPilot button presses
+      if b.type == FrogPilotButtonType.lkas and frogpilot_toggles.always_on_lateral_lkas:
+        self.always_on_lateral_disabled = not self.always_on_lateral_disabled
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1

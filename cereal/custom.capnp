@@ -20,13 +20,14 @@ struct FrogPilotCarState @0xaedffd8f31e7b55d {
     }
   }
 
-  brakeLights @0 :Bool;
-  dashboardSpeedLimit @1 :Float32;
-  distanceLongPressed @2 :Bool;
-  ecoGear @3 :Bool;
-  hasMenu @4 :Bool;
-  sportGear @5 :Bool;
-  trafficModeActive @6 :Bool;
+  alwaysOnLateralDisabled @0 :Bool;
+  brakeLights @1 :Bool;
+  dashboardSpeedLimit @2 :Float32;
+  distanceLongPressed @3 :Bool;
+  ecoGear @4 :Bool;
+  hasMenu @5 :Bool;
+  sportGear @6 :Bool;
+  trafficModeActive @7 :Bool;
 }
 
 struct FrogPilotDeviceState @0xf35cc4560bbf6ec2 {

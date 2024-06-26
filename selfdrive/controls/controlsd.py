@@ -193,7 +193,6 @@ class Controls:
     self.total_time = self.params_tracking.get_float("FrogPilotMinutes")
 
     self.always_on_lateral_active = False
-    self.always_on_lateral_disabled = False
     self.drive_added = False
     self.fcw_random_event_triggered = False
     self.holiday_theme_alerted = False
@@ -1027,7 +1026,7 @@ class Controls:
     self.always_on_lateral_active &= self.frogpilot_toggles.always_on_lateral
     self.always_on_lateral_active &= driving_gear
     self.always_on_lateral_active &= self.speed_check
-    self.always_on_lateral_active &= not self.always_on_lateral_disabled
+    self.always_on_lateral_active &= not self.sm['frogpilotCarState'].alwaysOnLateralDisabled
     self.always_on_lateral_active &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill
 
     self.drive_distance += CS.vEgo * DT_CTRL
@@ -1051,9 +1050,7 @@ class Controls:
       self.experimental_mode = self.sm['frogpilotPlan'].conditionalExperimentalActive
 
     if any(be.pressed and be.type == FrogPilotButtonType.lkas for be in CS.buttonEvents):
-      if self.frogpilot_toggles.always_on_lateral_lkas:
-        self.always_on_lateral_disabled = not self.always_on_lateral_disabled
-      elif self.frogpilot_toggles.experimental_mode_via_lkas:
+      if self.frogpilot_toggles.experimental_mode_via_lkas:
         if self.frogpilot_toggles.conditional_experimental_mode:
           conditional_status = self.params_memory.get_int("CEStatus")
           override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 3 if conditional_status >= 7 else 4

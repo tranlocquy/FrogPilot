@@ -199,7 +199,7 @@ class CarInterface(CarInterfaceBase):
       ]
 
     # events
-    events = self.create_common_events(ret)
+    events = self.create_common_events(ret, frogpilot_toggles=frogpilot_toggles)
 
     # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
     # the more accurate angle sensor signal is initialized
