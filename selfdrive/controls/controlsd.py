@@ -52,6 +52,7 @@ LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
+FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 SafetyModel = car.CarParams.SafetyModel
 
@@ -189,6 +190,7 @@ class Controls:
     self.total_time = self.params_tracking.get_float("FrogPilotMinutes")
 
     self.always_on_lateral_active = False
+    self.always_on_lateral_disabled = False
     self.drive_added = False
     self.openpilot_crashed_triggered = False
     self.update_toggles = False
@@ -899,6 +901,7 @@ class Controls:
     self.always_on_lateral_active &= CS.cruiseState.available
     self.always_on_lateral_active &= self.frogpilot_toggles.always_on_lateral
     self.always_on_lateral_active &= driving_gear
+    self.always_on_lateral_active &= not self.always_on_lateral_disabled
     self.always_on_lateral_active &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill
 
     self.drive_distance += CS.vEgo * DT_CTRL
@@ -917,6 +920,10 @@ class Controls:
         self.total_drives += 1
         self.params_tracking.put_int_nonblocking("FrogPilotDrives", self.total_drives)
         self.drive_added = True
+
+    if any(be.pressed and be.type == FrogPilotButtonType.lkas for be in CS.buttonEvents):
+      if self.frogpilot_toggles.always_on_lateral_lkas:
+        self.always_on_lateral_disabled = not self.always_on_lateral_disabled
 
     FPCC = custom.FrogPilotCarControl.new_message()
     FPCC.alwaysOnLateral = self.always_on_lateral_active
