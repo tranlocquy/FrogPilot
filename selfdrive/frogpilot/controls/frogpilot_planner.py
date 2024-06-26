@@ -198,6 +198,7 @@ class FrogPilotPlanner:
       braking_offset = np.clip((v_ego - v_lead) + far_lead_offset - COMFORT_BRAKE, 1, distance_factor)
       if frogpilot_toggles.smoother_braking:
         self.acceleration_jerk = self.base_acceleration_jerk * min(braking_offset, COMFORT_BRAKE / 2)
+        self.danger_jerk = self.base_danger_jerk * min(braking_offset, COMFORT_BRAKE / 2)
         self.speed_jerk = self.base_speed_jerk * min(braking_offset, COMFORT_BRAKE * 2)
         self.t_follow /= braking_offset
       self.slower_lead = max(braking_offset - far_lead_offset, 1) > 1
