@@ -250,6 +250,11 @@ void FrogPilotAnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &p) {
     }
   }
 
+  roadNameRect = QRect();
+  if (alertHeight == 0 && frogpilot_toggles.value(QLatin1String("road_name_ui")).toBool()) {
+    paintRoadName(p);
+  }
+
   if ((blinkerLeft || blinkerRight) && signalStyle != "None") {
     paintTurnSignals(p);
   }
@@ -460,6 +465,35 @@ void FrogPilotAnnotatedCameraWidget::paintCurveSpeedControl(QPainter &p) {
     p.drawText(cscRect, Qt::AlignCenter, cscSpeedText);
     p.drawPixmap(curveSpeedPoint, curveSpeedImage);
   }
+
+  p.restore();
+}
+
+void FrogPilotAnnotatedCameraWidget::paintRoadName(QPainter &p) {
+  static const QFont font = InterFont(40, QFont::DemiBold);
+
+  static QString cachedRoadName;
+  static int cachedRoadNameWidth = 0;
+
+  if (roadName != cachedRoadName) {
+    cachedRoadName = roadName;
+    cachedRoadNameWidth = QFontMetrics(font).horizontalAdvance(roadName);
+  }
+
+  QSize size(cachedRoadNameWidth + 100, 50);
+  roadNameRect = QStyle::alignedRect(Qt::LeftToRight, Qt::AlignHCenter | Qt::AlignBottom, size, rect().adjusted(0, 0, 0, -5));
+
+  if (roadName.isEmpty()) {
+    return;
+  }
+
+  p.save();
+
+  paintWidgetFrame(p, roadNameRect, blackColor());
+
+  p.setFont(font);
+  p.setPen(QPen(whiteColor(), 6));
+  p.drawText(roadNameRect, Qt::AlignCenter, roadName);
 
   p.restore();
 }
