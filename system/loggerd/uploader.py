@@ -258,12 +258,15 @@ def main(exit_event: threading.Event = None) -> None:
     sm.update(0)
 
     # FrogPilot variables
+    frogpilot_toggles = frogpilot_variables.get_frogpilot_toggles(sm)
 
     offroad = params.get_bool("IsOffroad")
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
 
     # FrogPilot variables
-    if network_type == NetworkType.none:
+    offroad_on_wifi = offroad and network_type in (NetworkType.ethernet, NetworkType.wifi)
+
+    if network_type == NetworkType.none or (not offroad_on_wifi and frogpilot_toggles.no_onroad_uploads):
       if allow_sleep:
         time.sleep(60 if offroad else 5)
       continue
