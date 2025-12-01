@@ -14,7 +14,7 @@ from opendbc.car.ford.values import FordSafetyFlags
 from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFrogPilotSafetyFlags
 from opendbc.car.mock.values import CAR as MOCK
-from opendbc.car.toyota.values import ToyotaFrogPilotFlags, ToyotaFrogPilotSafetyFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import NO_DSU_CAR, NO_STOP_TIMER_CAR, TSS2_CAR, ToyotaFlags, ToyotaFrogPilotFlags, ToyotaFrogPilotSafetyFlags, ToyotaSafetyFlags
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
@@ -184,6 +184,16 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
 
   FPCP: FrogPilotCarParams = CarInterface.get_frogpilot_params(candidate, fingerprints, car_fw, CP, frogpilot_toggles)
 
+  if CP.brand == "toyota" and FPCP.flags & ToyotaFrogPilotFlags.SMART_DSU.value:
+    if CP.carFingerprint in (NO_DSU_CAR - TSS2_CAR):
+      CP.alphaLongitudinalAvailable = True
+
+    if alpha_long_allowed or not CP.alphaLongitudinalAvailable:
+      CP.minEnableSpeed = -1
+      CP.openpilotLongitudinalControl = True
+      CP.flags &= ~ToyotaFlags.DISABLE_RADAR.value
+      CP.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+
   if CP.brand == "toyota" and FPCP.flags & ToyotaFrogPilotFlags.DSU_BYPASS.value:
     CP.openpilotLongitudinalControl = True
     CP.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
@@ -198,6 +208,10 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
       CP.flags &= ~GMFlags.CC_LONG.value
     elif CP.brand == "toyota":
       CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+
+  if CP.brand == "toyota":
+    CP.autoResumeSng = CP.openpilotLongitudinalControl and CP.carFingerprint in NO_STOP_TIMER_CAR
+    FPCP.canUsePedal = not CP.autoResumeSng
 
   if CP.brand in frogpilot_variables.GAS_INTERCEPTOR_BRANDS and FPCP.canUsePedal and CP.openpilotLongitudinalControl and PEDAL_MSG in fingerprints[0]:
     CP.autoResumeSng = True
