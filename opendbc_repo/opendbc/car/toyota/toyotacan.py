@@ -52,6 +52,8 @@ def create_accel_command(packer, accel, pcm_cancel, permit_braking, standstill_r
     "CANCEL_REQ": pcm_cancel,
     "ALLOW_LONG_PRESS": 1,
     "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
+
+    # FrogPilot variables
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 

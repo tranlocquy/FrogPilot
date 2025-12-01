@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
-if BIG_UI:
+if gui_app.big_ui():
   MARGIN = 50
   SPACING = 40
   FONT_SIZE = 72
@@ -21,6 +21,8 @@ else:
   FONT_SIZE = 25
   LINE_HEIGHT = 25
   BUTTON_SIZE = rl.Vector2(150, 80)
+
+# FrogPilot variables
 
 DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
             The text is long enough to demonstrate scrolling and word wrapping.""" * 30
@@ -66,11 +68,15 @@ class TextWindow(Widget):
     button_text = "Exit" if PC else "Reboot"
     self._button = Button(button_text, click_callback=self._on_button_clicked, button_style=ButtonStyle.TRANSPARENT_WHITE_BORDER, font_size=FONT_SIZE)
 
+    # FrogPilot variables
+
   @staticmethod
   def _on_button_clicked():
     gui_app.request_close()
     if not PC:
       HARDWARE.reboot()
+
+  # FrogPilot variables
 
   def _render(self, rect: rl.Rectangle):
     scroll = self._scroll_panel.update(self._textarea_rect, self._content_rect)
@@ -84,6 +90,8 @@ class TextWindow(Widget):
 
     button_bounds = rl.Rectangle(rect.width - MARGIN - BUTTON_SIZE.x - SPACING, rect.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     self._button.render(button_bounds)
+
+    # FrogPilot variables
 
 
 if __name__ == "__main__":

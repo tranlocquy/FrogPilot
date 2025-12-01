@@ -51,6 +51,8 @@ def create_lkas_hud(packer, CP, lkas_active, hud_alert, hud_count, car_model, au
   if CP.carFingerprint in RAM_CARS:
     values['AUTO_HIGH_BEAM_ON'] = auto_high_beam
 
+    # FrogPilot variables
+
   return packer.make_can_msg("DAS_6", 0, values)
 
 

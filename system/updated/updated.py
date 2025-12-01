@@ -221,6 +221,9 @@ def handle_agnos_update() -> None:
   set_offroad_alert("Offroad_NeosUpdate", True)
 
   manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
+
+  # FrogPilot variables
+
   target_slot_number = get_target_slot_number()
   flash_agnos_update(manifest_path, target_slot_number, cloudlog)
   set_offroad_alert("Offroad_NeosUpdate", False)
@@ -374,6 +377,8 @@ class Updater:
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
 
+    # FrogPilot variables
+
     self.params.put("UpdaterState", "downloading...")
 
     # TODO: cleanly interrupt this and invalidate old update
@@ -409,6 +414,8 @@ class Updater:
     self.params.put("UpdaterState", "finalizing update...")
     finalize_update()
     cloudlog.info("finalize success!")
+
+    # FrogPilot variables
 
 
 def main() -> None:
@@ -452,6 +459,7 @@ def main() -> None:
     while True:
       wait_helper.ready_event.clear()
 
+      # FrogPilot variables
       # Attempt an update
       exception = None
       try:
@@ -465,6 +473,8 @@ def main() -> None:
           first_run = False
           wait_helper.sleep(60)
           continue
+
+        # FrogPilot variables
 
         update_failed_count += 1
 
@@ -480,6 +490,7 @@ def main() -> None:
           cloudlog.info("skipping fetch, connection metered")
         elif wait_helper.user_request == UserRequest.CHECK:
           cloudlog.info("skipping fetch, only checking")
+        # FrogPilot variables
         else:
           updater.fetch_update()
           write_time_to_param(params, "UpdaterLastFetchTime")
@@ -507,6 +518,8 @@ def main() -> None:
 
       # infrequent attempts if we successfully updated recently
       wait_helper.user_request = UserRequest.NONE
+
+      # FrogPilot variables
       wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
