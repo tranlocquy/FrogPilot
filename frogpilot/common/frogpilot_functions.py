@@ -27,7 +27,7 @@ def frogpilot_boot_functions(build_metadata, params):
   sync_flag_file(frogpilot_variables.HD_PATH, frogpilot_toggles.use_higher_bitrate)
 
   ThemeManager.copy_default_theme()
-  ThemeManager(params).update_active_theme(frogpilot_toggles=frogpilot_toggles)
+  ThemeManager(params).update_active_theme(time_validated=system_time_valid(), frogpilot_toggles=frogpilot_toggles)
 
   frogpilot_utilities.delete_path(frogpilot_variables.RESTORE_TEMP_PATH)
 
