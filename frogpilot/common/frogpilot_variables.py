@@ -1694,13 +1694,10 @@ class FrogPilotVariables:
     toggle.nnff_lite = self.get_value("NNFFLite", condition=not is_angle_car and not toggle.nnff and lateral_tuning)
     toggle.use_turn_desires = self.get_value("TurnDesires", condition=lateral_tuning)
 
-    lkas_button_control = self.get_value("LKASButtonControl", cast=float, condition=toggle.car_make != "subaru")
-    toggle.experimental_mode_via_lkas = toggle.openpilot_longitudinal and lkas_button_control == BUTTON_FUNCTIONS["EXPERIMENTAL_MODE"]
-    toggle.force_coast_via_lkas = toggle.openpilot_longitudinal and lkas_button_control == BUTTON_FUNCTIONS["FORCE_COAST"]
-    toggle.pause_lateral_via_lkas = lkas_button_control == BUTTON_FUNCTIONS["PAUSE_LATERAL"]
-    toggle.pause_longitudinal_via_lkas = toggle.openpilot_longitudinal and lkas_button_control == BUTTON_FUNCTIONS["PAUSE_LONGITUDINAL"]
-    toggle.personality_profile_via_lkas = toggle.openpilot_longitudinal and lkas_button_control == BUTTON_FUNCTIONS["PERSONALITY_PROFILE"]
-    toggle.traffic_mode_via_lkas = toggle.openpilot_longitudinal and lkas_button_control == BUTTON_FUNCTIONS["TRAFFIC_MODE"]
+    if toggle.has_lkas_button and not toggle.always_on_lateral_lkas:
+      toggle.lkas_button_function = self.get_button_function("LKASButtonControl")
+    else:
+      toggle.lkas_button_function = BUTTON_FUNCTIONS["NOTHING"]
 
     toggle.lock_doors_timer = self.get_value("LockDoorsTimer", cast=float, condition=toggle.car_make == "toyota")
 

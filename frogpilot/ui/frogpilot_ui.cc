@@ -75,6 +75,7 @@ void FrogPilotUIState::update() {
   }
 
   const bool enabled = (*uiState()->sm)["selfdriveState"].getSelfdriveState().getEnabled();
+  frogpilot_scene.always_on_lateral_active = !enabled && (*sm)["frogpilotCarState"].getFrogpilotCarState().getAlwaysOnLateralEnabled();
   frogpilot_scene.parked = !uiState()->scene.started || (*uiState()->sm)["carState"].getCarState().getGearShifter() == cereal::CarState::GearShifter::PARK;
 }
 
