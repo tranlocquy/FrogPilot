@@ -48,11 +48,22 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
   // FrogPilot variables
   static QString crash_log_path = "/data/error_logs/error.txt";
   if (QFile::exists(crash_log_path)) {
-    a = {tr("openpilot crashed"),
-         tr("Please post the \"Error Log\" in the FrogPilot Discord!"),
-         "openpilotCrashed",
-         cereal::SelfdriveState::AlertSize::MID,
-         cereal::SelfdriveState::AlertStatus::CRITICAL};
+    bool random_events = frogpilot_toggles.value(QLatin1String("random_events")).toBool();
+    if (random_events && enableFerg) {
+      a = {};
+
+      if (!displayFerg) {
+        displayFerg = true;
+        ferg = loadPixmap("../../frogpilot/assets/random_events/icons/ferg.svg", {1080, 720});
+        update();
+      }
+    } else {
+      a = {random_events ? tr("openpilot crashed 💩") : tr("openpilot crashed"),
+           tr("Please post the \"Error Log\" in the FrogPilot Discord!"),
+           random_events ? "openpilotCrashedRandomEvent" : "openpilotCrashed",
+           cereal::SelfdriveState::AlertSize::MID,
+           cereal::SelfdriveState::AlertStatus::CRITICAL};
+    }
     return a;
   }
 
@@ -86,6 +97,11 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::SelfdriveState::AlertSize::NONE) {
     // FrogPilot variables
     alertHeight = 0;
+
+    if (displayFerg) {
+      QPainter p(this);
+      p.drawPixmap(QPoint((width() - ferg.width()) / 2, (height() - ferg.height()) / 2), ferg);
+    }
 
     return;
   }
