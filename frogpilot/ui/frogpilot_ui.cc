@@ -60,6 +60,12 @@ void FrogPilotUIState::runUpdateChecks() {
   pm->send("frogpilotUIRequest", msg);
 }
 
+void FrogPilotUIState::testAlert(const QString &alert) {
+  MessageBuilder msg;
+  msg.initEvent().initFrogpilotUIRequest().setTestAlert(alert.toStdString());
+  pm->send("frogpilotUIRequest", msg);
+}
+
 void FrogPilotUIState::update() {
   update_state(this);
 

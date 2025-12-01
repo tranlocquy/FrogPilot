@@ -84,6 +84,8 @@ class Soundd:
 
     self.ui_request_sock = messaging.sub_sock("frogpilotUIRequest")
 
+    self.update_frogpilot_sounds()
+
   def load_sounds(self):
     self.loaded_sounds: dict[int, np.ndarray] = {}
 
@@ -121,7 +123,7 @@ class Soundd:
         written_frames += frames_to_write
         self.current_sound_frame += frames_to_write
 
-    return ret * self.current_volume
+    return ret * self.alert_volumes.get(self.current_alert, self.current_volume)
 
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
@@ -136,7 +138,10 @@ class Soundd:
 
   def get_audible_alert(self, sm):
     # FrogPilot variables
-    if sm.updated['selfdriveState']:
+    test_alerts = [msg.frogpilotUIRequest.testAlert for msg in messaging.drain_sock(self.ui_request_sock) if msg.frogpilotUIRequest.which() == 'testAlert']
+    if test_alerts:
+      self.update_alert(getattr(AudibleAlert, test_alerts[-1]))
+    elif sm.updated['selfdriveState']:
       new_alert = sm['selfdriveState'].alertSound.raw
 
       # FrogPilot variables
@@ -194,7 +199,23 @@ class Soundd:
         if frogpilot_toggles is not self.frogpilot_toggles:
           self.frogpilot_toggles = frogpilot_toggles
 
+          self.update_frogpilot_sounds()
+
   # FrogPilot variables
+  def update_frogpilot_sounds(self):
+    volumes = {
+      AudibleAlert.engage: self.frogpilot_toggles.engage_volume,
+      AudibleAlert.disengage: self.frogpilot_toggles.disengage_volume,
+      AudibleAlert.refuse: self.frogpilot_toggles.refuse_volume,
+
+      AudibleAlert.prompt: self.frogpilot_toggles.prompt_volume,
+      AudibleAlert.promptRepeat: self.frogpilot_toggles.prompt_volume,
+      AudibleAlert.promptDistracted: self.frogpilot_toggles.prompt_distracted_volume,
+
+      AudibleAlert.warningSoft: self.frogpilot_toggles.warning_soft_volume,
+      AudibleAlert.warningImmediate: self.frogpilot_toggles.warning_immediate_volume,
+    }
+    self.alert_volumes = {alert: volume / 100.0 for alert, volume in volumes.items() if volume <= 100}
 
 
 def main():
