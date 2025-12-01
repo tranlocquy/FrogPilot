@@ -196,6 +196,7 @@ class LateralLagEstimator:
     self.reset(self.initial_lag, 0)
 
     # FrogPilot variables
+    self.frogpilot_toggles = frogpilot_variables.get_frogpilot_toggles()
 
   def reset(self, initial_lag: float, valid_blocks: int):
     window_len = int(self.window_sec / self.dt)
@@ -219,7 +220,9 @@ class LateralLagEstimator:
       liveDelay.status = log.LiveDelayData.Status.unestimated
 
     # FrogPilot variables
-    if liveDelay.status == log.LiveDelayData.Status.estimated:
+    if self.frogpilot_toggles.use_custom_steerActuatorDelay:
+      liveDelay.lateralDelay = self.frogpilot_toggles.steerActuatorDelay + frogpilot_variables.LATERAL_DELAY_OFFSET
+    elif liveDelay.status == log.LiveDelayData.Status.estimated:
       liveDelay.lateralDelay = valid_mean_lag
     else:
       liveDelay.lateralDelay = self.initial_lag
@@ -402,3 +405,4 @@ def main():
         params.put_nonblocking("LiveDelay", lag_msg_dat)
 
     # FrogPilot variables
+    lag_learner.frogpilot_toggles = frogpilot_variables.get_frogpilot_toggles(sm)

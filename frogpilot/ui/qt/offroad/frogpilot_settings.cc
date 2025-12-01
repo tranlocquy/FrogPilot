@@ -301,6 +301,8 @@ void FrogPilotSettingsWindow::updateVariables() {
   FrogPilotUIScene &frogpilot_scene = fs.frogpilot_scene;
   QJsonObject &frogpilot_toggles = frogpilot_scene.frogpilot_toggles;
 
+  bool migratedStockValues = false;
+
   carParamsWatcher->addParam("CarParamsPersistent");
 
   std::string carParams = params.get("CarParamsPersistent");
@@ -352,6 +354,30 @@ void FrogPilotSettingsWindow::updateVariables() {
     stoppingDecelRate = CP.getStoppingDecelRate();
     vEgoStarting = CP.getVEgoStarting();
     vEgoStopping = CP.getVEgoStopping();
+
+    std::vector<std::pair<std::string, float>> stockValues = {
+      {"SteerDelay", steerActuatorDelay},
+      {"SteerFriction", friction},
+      {"SteerKP", steerKp},
+      {"SteerLatAccel", latAccelFactor},
+      {"SteerRatio", steerRatio}
+    };
+    for (const auto &[key, value] : stockValues) {
+      float currentStock = params.getFloat(key + "Stock");
+      float storedValue = std::stof(std::to_string(value));
+
+      if (currentStock != storedValue && value != 0) {
+        if (params.getFloat(key) == currentStock || currentStock == 0) {
+          params.putFloat(key, value);
+        }
+        params.putFloat(key + "Stock", value);
+        migratedStockValues = true;
+      }
+    }
+  }
+
+  if (migratedStockValues) {
+    frogpilotUIState()->updateToggles();
   }
 
   std::string frogpilotCarParams = params.get("FrogPilotCarParamsPersistent");
