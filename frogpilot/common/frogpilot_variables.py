@@ -1679,6 +1679,10 @@ class FrogPilotVariables:
     toggle.frogpilot_telemetry = self.get_value("FrogPilotTelemetry", condition=self.params.get_bool("FrogPilotTelemetryConfirmed"))
 
     toggle.frogsgomoo_tweak = self.get_value("FrogsGoMoosTweak", condition=toggle.openpilot_longitudinal and toggle.car_make == "toyota")
+    if toggle.frogsgomoo_tweak:
+      toggle.stoppingDecelRate = 0.01
+      toggle.vEgoStarting = 0.1
+      toggle.vEgoStopping = 0.5
 
     toggle.holiday_themes = self.get_value("HolidayThemes")
     toggle.current_holiday_theme = holiday_theme if toggle.holiday_themes else "stock"
