@@ -82,6 +82,7 @@ private:
   bool cscTraining = false;
   bool experimentalMode = false;
   bool forceCoast = false;
+  bool longitudinalPaused = false;
   bool redLight = false;
   bool signalIsGif = false;
 
