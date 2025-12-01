@@ -41,6 +41,7 @@ class CarState(CarStateBase):
       self.button_states[button.event_type] = state
 
     # FrogPilot variables
+    self.distance_button = self.button_states[ButtonType.gapAdjustCruise]
 
     return button_events
 
@@ -141,6 +142,7 @@ class CarState(CarStateBase):
     self.frame += 1
 
     # FrogPilot variables
+    self.fp_ret.brakeLights = bool(pt_cp.vl["ESP_05"]["ESP_Status_Bremsdruck"])
 
     return ret
 
@@ -235,6 +237,7 @@ class CarState(CarStateBase):
     self.frame += 1
 
     # FrogPilot variables
+    self.fp_ret.brakeLights = bool(pt_cp.vl["Motor_2"]["MO2_BTS"])
 
     return ret
 

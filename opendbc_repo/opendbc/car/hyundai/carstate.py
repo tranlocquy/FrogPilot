@@ -22,6 +22,16 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 
 # FrogPilot variables
+def calculate_speed_limit(CP, cp, cp_cam):
+  if CP.flags & HyundaiFlags.CANFD:
+    speed_limit_bus = cp if CP.flags & HyundaiFlags.CANFD_LKA_STEERING else cp_cam
+    speed_limit = speed_limit_bus.vl["FR_CMR_02_100ms"]["ISLW_SpdCluMainDis"]
+    return speed_limit if 0 < speed_limit < 253 else 0
+
+  speed_limit = cp_cam.vl["LKAS12"]["CF_Lkas_TsrSpeed_Display_Clu"]
+  if speed_limit in (0, 255):
+    speed_limit = cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
+  return speed_limit if speed_limit not in (0, 255) else 0
 
 
 class CarState(CarStateBase):
@@ -67,6 +77,7 @@ class CarState(CarStateBase):
     self.params = CarControllerParams(CP)
 
     # FrogPilot variables
+    self.drive_mode = 0
 
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -208,6 +219,11 @@ class CarState(CarStateBase):
     ret.lowSpeedAlert = self.low_speed_alert
 
     # FrogPilot variables
+    self.distance_button = self.cruise_buttons[-1] == Buttons.GAP_DIST
+
+    self.fp_ret.brakeLights = bool(cp.vl["TCS13"]["BrakeLight"])
+    if self.FPCP.hasDashboardSpeedLimit:
+      self.fp_ret.dashboardSpeedLimit = calculate_speed_limit(self.CP, cp, cp_cam) * speed_conv
 
     return ret
 
@@ -303,11 +319,22 @@ class CarState(CarStateBase):
     ret.blockPcmEnable = not self.recent_button_interaction()
 
     # FrogPilot variables
+    self.distance_button = self.cruise_buttons[-1] == Buttons.GAP_DIST
+
+    self.fp_ret.brakeLights = bool(cp.vl["TCS"]["DriverBraking"])
+    if self.FPCP.hasDashboardSpeedLimit:
+      self.fp_ret.dashboardSpeedLimit = calculate_speed_limit(self.CP, cp, cp_cam) * speed_factor
+
+    drive_mode = cp.vl["DRIVE_MODE"]["DRIVE_MODE2"]
+    if drive_mode != 0:
+      self.drive_mode = drive_mode
+    self.fp_ret.ecoGear = self.drive_mode == 2
+    self.fp_ret.sportGear = self.drive_mode == 3
 
     return ret
 
   def get_can_parsers_canfd(self, CP):
-    msgs = []
+    msgs = [("DRIVE_MODE", float('nan'))]
     if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
       # TODO: this can be removed once we add dynamic support to vl_all
       msgs += [
@@ -324,6 +351,6 @@ class CarState(CarStateBase):
       return self.get_can_parsers_canfd(CP)
 
     return {
-      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
+      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [("Navi_HU", float('nan'))], 0),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [("LKAS12", float('nan'))], 2),
     }

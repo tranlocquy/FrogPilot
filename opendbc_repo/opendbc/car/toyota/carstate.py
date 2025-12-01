@@ -25,6 +25,19 @@ PERM_STEER_FAULTS = (3, 17)
 
 
 # FrogPilot variables
+# Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
+def calculate_speed_limit(cp_cam):
+  speed_limit_unit = cp_cam.vl["RSA1"]["TSGN1"]
+  speed_limit_value = cp_cam.vl["RSA1"]["SPDVAL1"]
+
+  if speed_limit_value >= 200:
+    return 0
+  elif speed_limit_unit == 1:
+    return speed_limit_value * CV.KPH_TO_MS
+  elif speed_limit_unit == 36:
+    return speed_limit_value * CV.MPH_TO_MS
+  else:
+    return 0
 
 
 class CarState(CarStateBase):
@@ -218,6 +231,13 @@ class CarState(CarStateBase):
 
     self.prev_pcm_acc_status = self.pcm_acc_status
 
+    self.fp_ret.brakeLights = bool(cp.vl["ESP_CONTROL"]["BRAKE_LIGHTS_ACC"])
+    self.fp_ret.dashboardSpeedLimit = calculate_speed_limit(cp_cam)
+
+    if not self.CP.flags & ToyotaFlags.SECOC.value:
+      self.fp_ret.ecoGear = cp.vl["GEAR_PACKET"]["ECON_ON"] == 1
+      self.fp_ret.sportGear = cp.vl["GEAR_PACKET"]["SPORT_ON_2" if self.CP.flags & ToyotaFlags.NO_DSU else "SPORT_ON"] == 1
+
     ret.buttonEvents = buttonEvents
     return ret
 
@@ -231,5 +251,5 @@ class CarState(CarStateBase):
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [("RSA1", float('nan'))], 2),
     }

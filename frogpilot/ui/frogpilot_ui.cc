@@ -19,11 +19,23 @@ static void update_state(FrogPilotUIState *fs) {
     const cereal::DeviceState::Reader &deviceState = sm["deviceState"].getDeviceState();
     frogpilot_scene.online = deviceState.getNetworkType() != cereal::DeviceState::NetworkType::NONE;
   }
+  if (fpsm.updated("frogpilotCarState")) {
+    const cereal::FrogPilotCarState::Reader &frogpilotCarState = fpsm["frogpilotCarState"].getFrogpilotCarState();
+  }
+  if (fpsm.updated("frogpilotPlan")) {
+    const cereal::FrogPilotPlan::Reader &frogpilotPlan = fpsm["frogpilotPlan"].getFrogpilotPlan();
+  }
+  if (fpsm.updated("frogpilotProcessState")) {
+    const cereal::FrogPilotProcessState::Reader &frogpilotProcessState = fpsm["frogpilotProcessState"].getFrogpilotProcessState();
+  }
 }
 
 FrogPilotUIState::FrogPilotUIState(QObject *parent) : QObject(parent) {
+  pm = std::make_unique<PubMaster>(std::vector<const char*>{"frogpilotUIEvent", "frogpilotUIRequest"});
   sm = std::make_unique<SubMaster>(std::vector<const char*>{
-    "carControl", "liveDelay", "liveParameters", "liveTorqueParameters", "liveTracks"
+    "carControl", "frogpilotCarState", "frogpilotDeviceState",
+    "frogpilotPlan", "frogpilotProcessState", "frogpilotRadarState", "frogpilotSelfdriveState", "frogpilotSignReading", "liveDelay",
+    "liveParameters", "liveTorqueParameters", "liveTracks", "mapdExtendedOut", "mapdOut"
   });
 
   wifi = new WifiManager(this);
@@ -32,6 +44,12 @@ FrogPilotUIState::FrogPilotUIState(QObject *parent) : QObject(parent) {
 FrogPilotUIState *frogpilotUIState() {
   static FrogPilotUIState frogpilot_ui_state;
   return &frogpilot_ui_state;
+}
+
+void FrogPilotUIState::runUpdateChecks() {
+  MessageBuilder msg;
+  msg.initEvent().initFrogpilotUIRequest().setUpdateChecks();
+  pm->send("frogpilotUIRequest", msg);
 }
 
 void FrogPilotUIState::update() {
@@ -44,4 +62,10 @@ void FrogPilotUIState::update() {
 
   const bool enabled = (*uiState()->sm)["selfdriveState"].getSelfdriveState().getEnabled();
   frogpilot_scene.parked = !uiState()->scene.started || (*uiState()->sm)["carState"].getCarState().getGearShifter() == cereal::CarState::GearShifter::PARK;
+}
+
+void FrogPilotUIState::updateToggles() {
+  MessageBuilder msg;
+  msg.initEvent().initFrogpilotUIRequest().setUpdateToggles();
+  pm->send("frogpilotUIRequest", msg);
 }

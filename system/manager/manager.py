@@ -140,6 +140,7 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   # FrogPilot variables
+  sm = sm.extend(['frogpilotPlan'])
 
   write_onroad_params(False, params)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
