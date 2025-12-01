@@ -122,7 +122,10 @@ void AnnotatedCameraWidget::paintGL() {
     }
 
     // FrogPilot variables
-    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+    int camera_view = frogpilot_toggles.value(QLatin1String("camera_view")).toInt();
+    CameraWidget::setStreamType(camera_view == 1 ? VISION_STREAM_DRIVER :
+                                camera_view == 3 || (camera_view == 0 && wide_cam_requested) ? VISION_STREAM_WIDE_ROAD :
+                                VISION_STREAM_ROAD);
     CameraWidget::setFrameId(sm["modelV2"].getModelV2().getFrameId());
     CameraWidget::paintGL();
   }
