@@ -133,10 +133,19 @@ QString getThemeName(const std::string &paramKey, Params &params) {
   return formatThemeName(key, paramKey == "WheelIcon");
 }
 
-QStringList getThemeList(const QDir &directory, const QString &subFolder, const QString &assetParam, Params &params, QMap<QString, QString> &assetKeys) {
+QString getActiveThemeAsset(const QString &subFolder) {
+  if (subFolder.isEmpty()) {
+    const QFileInfoList wheels = QDir("../../frogpilot/assets/active_theme/steering_wheel").entryInfoList(QDir::Files);
+    return wheels.isEmpty() ? QString() : QFileInfo(wheels.first().symLinkTarget()).completeBaseName();
+  }
+  return QFileInfo(QFileInfo("../../frogpilot/assets/active_theme/" + subFolder).symLinkTarget()).dir().dirName();
+}
+
+QStringList getThemeList(bool randomThemes, const QDir &directory, const QString &subFolder, const QString &assetParam, Params &params,
+                         QMap<QString, QString> &assetKeys) {
   const bool useFiles = subFolder.isEmpty();
 
-  const QString currentAsset = QString::fromStdString(params.get(assetParam.toStdString()));
+  const QString currentAsset = randomThemes ? getActiveThemeAsset(subFolder) : QString::fromStdString(params.get(assetParam.toStdString()));
 
   QStringList themes;
   for (const QFileInfo &entry : directory.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot)) {
@@ -305,7 +314,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent, bool
         QMap<QString, QString> assetKeys;
         QStringList themes;
         if (id != 1) {
-          themes = getThemeList(asset.directory, asset.subFolder, QString::fromStdString(paramKey), params, assetKeys);
+          themes = getThemeList(randomThemes, asset.directory, asset.subFolder, QString::fromStdString(paramKey), params, assetKeys);
         }
 
         if (id == 0) {
@@ -421,6 +430,12 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent, bool
   }
 
   QObject::connect(static_cast<ToggleControl*>(toggles["CustomThemes"]), &ToggleControl::toggleFlipped, this, &FrogPilotThemesPanel::updateToggles);
+  QObject::connect(static_cast<ToggleControl*>(toggles["RandomThemes"]), &ToggleControl::toggleFlipped, [this](bool state) {
+    if (state) {
+      ConfirmationDialog::alert(tr("\"Random Themes\" picks from the built-in Frog theme, the holiday themes when \"Include Holiday Themes\" is on, and themes you've already downloaded, so grab the ones you want it to use!"), this);
+    }
+    updateThemeSelections(state);
+  });
 
   QObject::connect(parent, &FrogPilotSettingsWindow::closeSubPanel, [themesLayout, themesPanel, this] {
     openDescriptions(forceOpenDescriptions, toggles);
@@ -436,7 +451,7 @@ void FrogPilotThemesPanel::showEvent(QShowEvent *event) {
     asset.allDownloaded = params.get(asset.downloadableParam.toStdString()).empty();
   }
 
-  updateThemeSelections();
+  updateThemeSelections(params.getBool("RandomThemes") && parent->tuningLevel >= parent->frogpilotToggleLevels.value("RandomThemes").toDouble());
 
   updateToggles();
 }
@@ -531,10 +546,17 @@ void FrogPilotThemesPanel::updateState(const UIState &s, const FrogPilotUIState 
   parent->keepScreenOn = themeDownloading;
 }
 
-void FrogPilotThemesPanel::updateThemeSelections() {
+void FrogPilotThemesPanel::updateThemeSelections(bool randomThemesEnabled) {
   for (auto &[param, asset] : themeAssets) {
-    asset.button->setValue(getThemeName(param.toStdString(), params));
+    if (randomThemesEnabled) {
+      asset.button->setValue("");
+    } else {
+      asset.button->setValue(getThemeName(param.toStdString(), params));
+    }
+    asset.button->setVisibleButton(2, !randomThemesEnabled);
   }
+
+  randomThemes = randomThemesEnabled;
 }
 
 void FrogPilotThemesPanel::updateToggles() {
