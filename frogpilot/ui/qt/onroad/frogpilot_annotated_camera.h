@@ -82,6 +82,7 @@ private:
   bool cscTraining = false;
   bool experimentalMode = false;
   bool forceCoast = false;
+  bool lateralPaused = false;
   bool longitudinalPaused = false;
   bool redLight = false;
   bool signalIsGif = false;
@@ -120,6 +121,7 @@ private:
   QPixmap pausedIcon;
   QPixmap speedIcon;
   QPixmap stopSignImg;
+  QPixmap turnIcon;
 
   QRect roadNameRect;
   QRect standstillTimerRect;

@@ -22,6 +22,7 @@ class FrogPilotCard:
     self.distance_pressed_previously = False
     self.force_coast = False
     self.onroad_distance_button = False
+    self.pause_lateral = False
     self.pause_longitudinal = False
 
     self.accel_press_count = 0
@@ -43,6 +44,8 @@ class FrogPilotCard:
       self.handle_experimental_mode(sm, frogpilot_toggles)
     elif sm["carControl"].longActive and function == frogpilot_variables.BUTTON_FUNCTIONS["FORCE_COAST"]:
       self.force_coast = not self.force_coast
+    elif function == frogpilot_variables.BUTTON_FUNCTIONS["PAUSE_LATERAL"]:
+      self.pause_lateral = not self.pause_lateral
     elif (sm["carControl"].longActive or self.pause_longitudinal) and function == frogpilot_variables.BUTTON_FUNCTIONS["PAUSE_LONGITUDINAL"]:
       self.pause_longitudinal = not self.pause_longitudinal
 
@@ -83,6 +86,7 @@ class FrogPilotCard:
 
     self.always_on_lateral_enabled = self.always_on_lateral_allowed and self.always_on_lateral_set
     self.always_on_lateral_enabled &= carState.gearShifter not in frogpilot_variables.NON_DRIVING_GEARS
+    self.always_on_lateral_enabled &= sm["frogpilotPlan"].lateralCheck
     self.always_on_lateral_enabled &= sm["liveCalibration"].calPerc >= 1
     self.always_on_lateral_enabled &= not sm["frogpilotSelfdriveState"].hasDisableEvents or self.frogs_go_moo
     self.always_on_lateral_enabled &= not any(event.name == EventName.tooDistracted for event in sm["onroadEvents"])
@@ -125,6 +129,7 @@ class FrogPilotCard:
     frogpilotCarState.experimentalModePressCount = self.experimental_mode_press_count
     frogpilotCarState.forceCoast = self.force_coast
     frogpilotCarState.lkasButtonPressCount = self.lkas_button_press_count
+    frogpilotCarState.pauseLateral = self.pause_lateral
     frogpilotCarState.pauseLongitudinal = self.pause_longitudinal
 
     return frogpilotCarState
