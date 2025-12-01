@@ -224,6 +224,8 @@ void FrogPilotUIState::update() {
   const bool enabled = (*uiState()->sm)["selfdriveState"].getSelfdriveState().getEnabled();
   frogpilot_scene.always_on_lateral_active = !enabled && (*sm)["frogpilotCarState"].getFrogpilotCarState().getAlwaysOnLateralEnabled();
   frogpilot_scene.conditional_status = enabled ? (*sm)["frogpilotPlan"].getFrogpilotPlan().getCeStatus() : 0;
+  driver_camera_timer = frogpilot_scene.reverse && frogpilot_scene.frogpilot_toggles.value(QLatin1String("driver_camera_in_reverse")).toBool() ? driver_camera_timer + 1 : 0;
+  frogpilot_scene.driver_camera_active = driver_camera_timer >= UI_FREQ / 2;
   frogpilot_scene.parked = !uiState()->scene.started || (*uiState()->sm)["carState"].getCarState().getGearShifter() == cereal::CarState::GearShifter::PARK || isFrogsGoMoo();
 }
 
