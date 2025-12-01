@@ -135,6 +135,8 @@ def send_stats(params, frogpilot_toggles, frogpilot_api):
       "toggles": vars(frogpilot_toggles),
       "using_default_model": frogpilot_toggles.model == frogpilot_variables.DEFAULT_MODEL["id"],
     }
+  else:
+    params.remove("SpeedLimitsUploadedHash")
 
   response = frogpilot_api.post_gzip("/v1/stats", json.dumps(payload, separators=(",", ":")).encode(), timeout=30)
   if not frogpilot_api.succeeded(response):
