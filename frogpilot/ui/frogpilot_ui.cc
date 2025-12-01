@@ -207,6 +207,12 @@ void FrogPilotUIState::setTethering(int mode) {
   wifi->setTetheringEnabled(mode == 1 || (mode == 2 && uiState()->scene.started) || mode == 3);
 }
 
+void FrogPilotUIState::speedLimitAccepted() {
+  MessageBuilder msg;
+  msg.initEvent().initFrogpilotUIEvent().setSpeedLimitAccepted();
+  pm->send("frogpilotUIEvent", msg);
+}
+
 void FrogPilotUIState::testAlert(const QString &alert) {
   MessageBuilder msg;
   msg.initEvent().initFrogpilotUIRequest().setTestAlert(alert.toStdString());
