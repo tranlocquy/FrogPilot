@@ -51,6 +51,12 @@ private:
 
   FrogPilotParamValueControl *ceSpeedLeadToggle;
   FrogPilotParamValueControl *ceSpeedToggle;
+  FrogPilotParamValueControl *longitudinalActuatorDelayToggle;
+  FrogPilotParamValueControl *startAccelToggle;
+  FrogPilotParamValueControl *stopAccelToggle;
+  FrogPilotParamValueControl *stoppingDecelRateToggle;
+  FrogPilotParamValueControl *vEgoStartingToggle;
+  FrogPilotParamValueControl *vEgoStoppingToggle;
 
   FrogPilotSettingsWindow *parent;
 

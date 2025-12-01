@@ -356,17 +356,23 @@ void FrogPilotSettingsWindow::updateVariables() {
     vEgoStopping = CP.getVEgoStopping();
 
     std::vector<std::pair<std::string, float>> stockValues = {
+      {"LongitudinalActuatorDelay", longitudinalActuatorDelay},
+      {"StartAccel", startAccel},
       {"SteerDelay", steerActuatorDelay},
       {"SteerFriction", friction},
       {"SteerKP", steerKp},
       {"SteerLatAccel", latAccelFactor},
-      {"SteerRatio", steerRatio}
+      {"SteerRatio", steerRatio},
+      {"StopAccel", stopAccel},
+      {"StoppingDecelRate", stoppingDecelRate},
+      {"VEgoStarting", vEgoStarting},
+      {"VEgoStopping", vEgoStopping}
     };
     for (const auto &[key, value] : stockValues) {
       float currentStock = params.getFloat(key + "Stock");
       float storedValue = std::stof(std::to_string(value));
 
-      if (currentStock != storedValue && value != 0) {
+      if (currentStock != storedValue && (value != 0 || key == "StartAccel")) {
         if (params.getFloat(key) == currentStock || currentStock == 0) {
           params.putFloat(key, value);
         }

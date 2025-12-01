@@ -214,19 +214,25 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
       });
       longitudinalToggle = advancedLongitudinalTuneToggle;
     } else if (param == "LongitudinalActuatorDelay") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 1, tr(" seconds"), {{1, "1.00" + tr(" second")}}, 0.01);
+      longitudinalActuatorDelayToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 1, tr(" seconds"), {{1, "1.00" + tr(" second")}}, 0.01);
+      longitudinalToggle = longitudinalActuatorDelayToggle;
     } else if (param == "MaxDesiredAcceleration") {
       longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.1, 4.0, tr(" m/s²"), std::map<float, QString>(), 0.1);
     } else if (param == "StartAccel") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 4, tr(" m/s²"), std::map<float, QString>(), 0.01, true);
+      startAccelToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 4, tr(" m/s²"), std::map<float, QString>(), 0.01, true);
+      longitudinalToggle = startAccelToggle;
     } else if (param == "VEgoStarting") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.01, 1, tr(" m/s"), std::map<float, QString>(), 0.01);
+      vEgoStartingToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.01, 1, tr(" m/s"), std::map<float, QString>(), 0.01);
+      longitudinalToggle = vEgoStartingToggle;
     } else if (param == "StopAccel") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, -4, 0, tr(" m/s²"), std::map<float, QString>(), 0.01, true);
+      stopAccelToggle = new FrogPilotParamValueControl(param, title, desc, icon, -4, 0, tr(" m/s²"), std::map<float, QString>(), 0.01, true);
+      longitudinalToggle = stopAccelToggle;
     } else if (param == "StoppingDecelRate") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.001, 12, tr(" m/s²/s"), std::map<float, QString>(), 0.001, true);
+      stoppingDecelRateToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.001, 12, tr(" m/s²/s"), std::map<float, QString>(), 0.001, true);
+      longitudinalToggle = stoppingDecelRateToggle;
     } else if (param == "VEgoStopping") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.01, 1, tr(" m/s"), std::map<float, QString>(), 0.01);
+      vEgoStoppingToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0.01, 1, tr(" m/s"), std::map<float, QString>(), 0.01);
+      longitudinalToggle = vEgoStoppingToggle;
 
     } else if (param == "ConditionalExperimental") {
       FrogPilotManageControl *conditionalExperimentalToggle = new FrogPilotManageControl(param, title, desc, icon);
@@ -567,6 +573,15 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
 }
 
 void FrogPilotLongitudinalPanel::showEvent(QShowEvent *event) {
+  if (parent->carDetected) {
+    longitudinalActuatorDelayToggle->setTitle(QString(tr("Actuator Delay (Default: %1)")).arg(QString::number(parent->longitudinalActuatorDelay, 'f', 2)));
+    startAccelToggle->setTitle(QString(tr("Start Acceleration (Default: %1)")).arg(QString::number(parent->startAccel, 'f', 2)));
+    stopAccelToggle->setTitle(QString(tr("Stop Acceleration (Default: %1)")).arg(QString::number(parent->stopAccel, 'f', 2)));
+    stoppingDecelRateToggle->setTitle(QString(tr("Stopping Rate (Default: %1)")).arg(QString::number(parent->stoppingDecelRate, 'f', 2)));
+    vEgoStartingToggle->setTitle(QString(tr("Start Speed (Default: %1)")).arg(QString::number(parent->vEgoStarting, 'f', 2)));
+    vEgoStoppingToggle->setTitle(QString(tr("Stop Speed (Default: %1)")).arg(QString::number(parent->vEgoStopping, 'f', 2)));
+  }
+
   updateToggles();
 }
 
