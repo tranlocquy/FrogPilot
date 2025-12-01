@@ -10,9 +10,11 @@ from opendbc.car.carlog import carlog
 from opendbc.car.structs import CarParams, CarParamsT
 from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from opendbc.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
+from opendbc.car.ford.values import FordSafetyFlags
+from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFrogPilotSafetyFlags
 from opendbc.car.mock.values import CAR as MOCK
-from opendbc.car.toyota.values import ToyotaFrogPilotSafetyFlags
+from opendbc.car.toyota.values import ToyotaFrogPilotSafetyFlags, ToyotaSafetyFlags
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
@@ -181,6 +183,17 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   from openpilot.frogpilot.common import frogpilot_variables
 
   FPCP: FrogPilotCarParams = CarInterface.get_frogpilot_params(candidate, fingerprints, car_fw, CP, frogpilot_toggles)
+
+  if frogpilot_variables.can_disable_openpilot_long(CP) and not CP.alphaLongitudinalAvailable and frogpilot_toggles.disable_openpilot_long:
+    FPCP.openpilotLongitudinalControlDisabled = CP.openpilotLongitudinalControl
+    CP.openpilotLongitudinalControl = False
+
+    if CP.brand == "ford":
+      CP.safetyConfigs[-1].safetyParam &= ~FordSafetyFlags.LONG_CONTROL.value
+    elif CP.brand == "gm":
+      CP.flags &= ~GMFlags.CC_LONG.value
+    elif CP.brand == "toyota":
+      CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
 
   if CP.brand in frogpilot_variables.GAS_INTERCEPTOR_BRANDS and FPCP.canUsePedal and CP.openpilotLongitudinalControl and PEDAL_MSG in fingerprints[0]:
     CP.autoResumeSng = True
