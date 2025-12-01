@@ -24,6 +24,7 @@ from opendbc.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from opendbc.car.hyundai.hyundaicanfd import CanBus as HyundaiCanBus
 from opendbc.car.hyundai.values import CAR as HYUNDAI, CANFD_CAR, HyundaiFlags, HyundaiFrogPilotSafetyFlags
 from opendbc.car.mock.values import CAR as MOCK
+from opendbc.car.subaru.values import CAR as SUBARU, SubaruFlags, SubaruSafetyFlags
 from opendbc.car.toyota.values import CAR as TOYOTA, NO_DSU_CAR, TSS2_CAR, UNSUPPORTED_DSU_CAR, ToyotaFrogPilotFlags
 from opendbc.car.values import PLATFORMS
 from opendbc.can import CANParser
@@ -215,6 +216,10 @@ class CarInterfaceBase(ABC):
 
         if CP.flags & HyundaiFlags.CANFD and frogpilot_toggles.taco_tune_hacks:
           CP.safetyConfigs[-1].safetyParam |= HyundaiFrogPilotSafetyFlags.TACO_TUNE_HACK.value
+
+      elif platform in SUBARU:
+        if not (CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID)) and frogpilot_toggles.subaru_sng:
+          CP.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.SNG.value
 
       elif platform in TOYOTA:
         fp_ret.canUsePedal = not CP.autoResumeSng
