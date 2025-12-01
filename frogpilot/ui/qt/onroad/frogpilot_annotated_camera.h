@@ -76,9 +76,12 @@ private:
   void paintStandstillTimer(QPainter &p);
   void paintStoppingPoint(QPainter &p);
   void paintTurnSignals(QPainter &p);
+  void paintWeather(QPainter &p, const QPoint &position);
+  void paintWidgetFrame(QPainter &p, const QRect &rect, const QColor &borderColor);
   void updateCEMIcon();
   void updateIcon(const QString &path, QSharedPointer<FrogPilotMovie> &icon, QString &iconPath);
   void updateSignals();
+  void updateWeatherIcon();
 
   bool blindspotLeft = false;
   bool blindspotRight = false;
@@ -94,11 +97,13 @@ private:
   bool redLight = false;
   bool signalIsGif = false;
   bool speedLimitChanged = false;
+  bool weatherDaytime = false;
 
   int desiredFollowDistance = 0;
   int signalAnimationLength = 0;
   int signalHeight = 0;
   int signalWidth = 0;
+  int weatherId = 0;
 
   float accelerationEgo = 0.0f;
   float cameraSpeedLimit = 0.0f;
@@ -155,6 +160,7 @@ private:
   QRect standstillTimerRect;
 
   QSharedPointer<FrogPilotMovie> cemIcon;
+  QSharedPointer<FrogPilotMovie> weatherIcon;
 
   QString cemIconPath;
   QString leadDistanceUnit;
@@ -163,6 +169,7 @@ private:
   QString signalStyle;
   QString speedLimitOffsetStr;
   QString speedUnit;
+  QString weatherIconPath;
 
   QVector<QPixmap> blindspotImages;
   QVector<QPixmap> signalImages;
