@@ -126,7 +126,8 @@ class LongitudinalPlanner:
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
 
       # FrogPilot variables
-      accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
+      if not sm['frogpilotPlan'].cscControllingSpeed:
+        accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
     else:
       accel_clip = [ACCEL_MIN, ACCEL_MAX]
 
@@ -143,7 +144,7 @@ class LongitudinalPlanner:
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
 
     # FrogPilot variables
-    mpc_accel_max = accel_clip[1]
+    mpc_accel_max = max(accel_clip[1], 0.0) if sm['radarState'].leadOne.status or sm['radarState'].leadTwo.status else accel_clip[1]
 
     if not self.allow_throttle:
       clipped_accel_coast = max(accel_coast, accel_clip[0])
