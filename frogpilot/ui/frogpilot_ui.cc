@@ -145,6 +145,14 @@ void FrogPilotUIState::flashPanda() {
   pm->send("frogpilotUIRequest", msg);
 }
 
+void FrogPilotUIState::reportIssue(const QString &report) {
+  MessageBuilder msg;
+  cereal::Event::Builder event = msg.initEvent();
+  event.initFrogpilotUIRequest().setIssueReport(report.toStdString());
+  issue_report_request_time = event.getLogMonoTime();
+  pm->send("frogpilotUIRequest", msg);
+}
+
 void FrogPilotUIState::restoreSettingsBackup(const QString &name) {
   MessageBuilder msg;
   cereal::Event::Builder event = msg.initEvent();
