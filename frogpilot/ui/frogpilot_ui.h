@@ -25,10 +25,12 @@ class FrogPilotUIState : public QObject {
 public:
   explicit FrogPilotUIState(QObject *parent = nullptr);
 
+  void cancelMapsDownload();
   void cancelModelDownload();
   void cancelThemeDownload();
   void createSettingsBackup(const QString &name);
   void downloadAllModels();
+  void downloadMaps();
   void downloadModels(const QStringList &models);
   void downloadTheme(const QString &component, const QStringList &themes);
   void experimentalModePressed();
@@ -44,6 +46,7 @@ public:
 
   FrogPilotUIScene frogpilot_scene = {};
 
+  uint64_t download_maps_request_time = 0;
   uint64_t download_model_request_time = 0;
   uint64_t download_theme_request_time = 0;
   uint64_t flash_panda_request_time = 0;

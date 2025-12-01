@@ -2,6 +2,7 @@
 import datetime
 import gc
 import json
+import threading
 import time
 
 from cereal import messaging
@@ -17,7 +18,8 @@ from openpilot.frogpilot.system.frogpilot_tracking import FrogPilotTracking
 from openpilot.frogpilot.system.model_manager import ModelManager
 
 class FrogPilotRequests:
-  def __init__(self, model_manager, theme_manager, thread_manager):
+  def __init__(self, cancel_maps_download, model_manager, theme_manager, thread_manager):
+    self.cancel_maps_download = cancel_maps_download
     self.model_manager = model_manager
     self.theme_manager = theme_manager
     self.thread_manager = thread_manager
@@ -53,7 +55,7 @@ class FrogPilotRequests:
       self.settings_backup = "failed"
       raise
 
-  def update(self, sm, params):
+  def update(self, now, sm, params):
     for msg in messaging.drain_sock(self.ui_request_sock):
       self.pending[msg.frogpilotUIRequest.which()] = (msg.logMonoTime, msg.frogpilotUIRequest)
 
@@ -113,6 +115,13 @@ class FrogPilotRequests:
       self.flashed_panda = False
       self.thread_manager.run_in_thread(self.flash_panda)
 
+    if not self.thread_manager.is_thread_alive("update_maps") and self.take("downloadMaps") is not None:
+      self.thread_manager.run_in_thread(frogpilot_functions.update_maps, (now, params, self.cancel_maps_download, sm, True))
+
+    if self.take("cancelMapsDownload") is not None:
+      self.take("downloadMaps")
+      self.cancel_maps_download.set()
+
     if not self.thread_manager.is_thread_alive("run_settings_backup"):
       request = self.take("createSettingsBackup")
       if request is not None:
@@ -133,7 +142,9 @@ class FrogPilotRequests:
     frogpilot_process_state_send = messaging.new_message("frogpilotProcessState")
     frogpilotProcessState = frogpilot_process_state_send.frogpilotProcessState
 
+    frogpilotProcessState.downloadingMaps = self.thread_manager.is_thread_alive("update_maps")
     frogpilotProcessState.downloadingModels = self.thread_manager.is_thread_alive("download_models") or self.model_manager.downloading_automatically
+    frogpilotProcessState.downloadMapsRequestTime = self.request_times.get("downloadMaps", 0)
     frogpilotProcessState.downloadThemeRequestTime = self.request_times.get("downloadTheme", 0)
     frogpilotProcessState.flashedPanda = self.flashed_panda
     frogpilotProcessState.flashingPanda = flashing_panda
@@ -168,9 +179,11 @@ def transition_onroad():
 
   frogpilot_variables.ERROR_LOG_PATH.unlink(missing_ok=True)
 
-def update_checks(now, model_manager, theme_manager, thread_manager, sm, params, frogpilot_toggles, boot_run=False):
+def update_checks(now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, boot_run=False):
   while not (frogpilot_utilities.is_url_pingable("https://github.com") or frogpilot_utilities.is_url_pingable("https://gitlab.com")):
     time.sleep(60)
+
+  thread_manager.run_in_thread(frogpilot_functions.update_maps, (now, params, cancel_maps_download, sm))
 
   if frogpilot_toggles.automatic_updates:
     thread_manager.run_in_thread(frogpilot_functions.update_openpilot, (thread_manager, params))
@@ -215,7 +228,8 @@ def frogpilot_thread():
   theme_manager = ThemeManager(params)
   thread_manager = frogpilot_utilities.ThreadManager()
 
-  frogpilot_requests = FrogPilotRequests(model_manager, theme_manager, thread_manager)
+  cancel_maps_download = threading.Event()
+  frogpilot_requests = FrogPilotRequests(cancel_maps_download, model_manager, theme_manager, thread_manager)
 
   frogpilot_toggles = variables.frogpilot_toggles
 
@@ -273,7 +287,7 @@ def frogpilot_thread():
 
     started_previously = started
 
-    toggles_updated, update_checks_requested = frogpilot_requests.update(sm, params)
+    toggles_updated, update_checks_requested = frogpilot_requests.update(now, sm, params)
     frogpilot_requests.publish(pm, stats_saved_count)
 
     toggles_updated |= sm["frogpilotDeviceState"].forceOnroadClearedCount > force_onroad_cleared_count
@@ -295,7 +309,7 @@ def frogpilot_thread():
 
     if run_update_checks:
       theme_manager.update_active_theme(time_validated, frogpilot_toggles)
-      thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, frogpilot_toggles))
+      thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles))
 
       run_update_checks = False
     elif not time_validated:
@@ -306,7 +320,7 @@ def frogpilot_thread():
 
         thread_manager.run_in_thread(frogpilot_backups.backup_toggles, (params, True))
         thread_manager.run_in_thread(send_stats, (params, frogpilot_toggles, api))
-        thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, frogpilot_toggles, True))
+        thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, True))
 
 def main():
   frogpilot_thread()

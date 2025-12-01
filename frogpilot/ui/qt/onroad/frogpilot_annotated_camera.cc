@@ -188,6 +188,7 @@ void FrogPilotAnnotatedCameraWidget::updateState(const UIState &s, const FrogPil
   laneWidthRight = frogpilotPlan.getLaneWidthRight();
   redLight = frogpilotPlan.getRedLight();
   roadCurvature = frogpilotPlan.getRoadCurvature();
+  roadName = QString::fromStdString(mapdOut.getRoadName());
   vEgo = carState.getVEgo();
 
   stoppingDistance = 0.0f;
