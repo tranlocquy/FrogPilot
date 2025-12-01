@@ -125,6 +125,29 @@ FrogPilotDevicePanel::FrogPilotDevicePanel(FrogPilotSettingsWindow *parent, bool
   QObject::connect(static_cast<FrogPilotButtonToggleControl*>(toggles["NoUploads"]), &FrogPilotButtonToggleControl::buttonClicked, this, &FrogPilotDevicePanel::updateToggles);
   QObject::connect(static_cast<ToggleControl*>(toggles["NoUploads"]), &ToggleControl::toggleFlipped, this, &FrogPilotDevicePanel::updateToggles);
 
+  std::function<void()> updateHigherBitrate = [this]() {
+    bool useHigherBitrate = params.getBool("HigherBitrate") && params.getBool("NoUploads") && !params.getBool("DisableOnroadUploads");
+
+    QFile toggleFile("/cache/use_HD");
+    if (toggleFile.exists() == useHigherBitrate) {
+      return;
+    }
+
+    if (useHigherBitrate) {
+      toggleFile.open(QIODevice::WriteOnly);
+      toggleFile.close();
+    } else {
+      toggleFile.remove();
+    }
+
+    if (FrogPilotConfirmationDialog::toggleReboot(this)) {
+      FrogPilotConfirmationDialog::softReboot(this);
+    }
+  };
+  QObject::connect(static_cast<ToggleControl*>(toggles["HigherBitrate"]), &ToggleControl::toggleFlipped, updateHigherBitrate);
+  QObject::connect(static_cast<FrogPilotButtonToggleControl*>(toggles["NoUploads"]), &FrogPilotButtonToggleControl::buttonClicked, updateHigherBitrate);
+  QObject::connect(static_cast<ToggleControl*>(toggles["NoUploads"]), &ToggleControl::toggleFlipped, updateHigherBitrate);
+
   openDescriptions(forceOpenDescriptions, toggles);
 
   QObject::connect(parent, &FrogPilotSettingsWindow::closeSubPanel, [deviceLayout, devicePanel, this] {
