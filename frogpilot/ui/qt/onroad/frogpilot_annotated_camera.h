@@ -27,6 +27,8 @@ public:
 
   float speed = 0;
 
+  std::vector<QPointF> radar_tracks;
+
   FrogPilotUIScene frogpilot_scene = {};
 
   QColor blueColor(int alpha = 255) { return QColor(0, 0, 255, alpha); }
@@ -54,6 +56,7 @@ private:
   void paintCEMStatus(QPainter &p, const QPoint &position);
   void paintCompass(QPainter &p, const QPoint &position);
   void paintCurveSpeedControl(QPainter &p);
+  void paintRadarTracks(QPainter &p);
   void paintRoadName(QPainter &p);
   void paintStandstillTimer(QPainter &p);
   void paintStoppingPoint(QPainter &p);
