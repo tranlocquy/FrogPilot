@@ -25,6 +25,7 @@ private:
   bool engageable;
 
   // FrogPilot variables
+  QColor backgroundColor() const;
 };
 
 void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity);

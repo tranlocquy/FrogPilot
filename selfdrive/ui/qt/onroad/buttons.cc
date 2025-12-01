@@ -54,7 +54,19 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 
   // FrogPilot variables
 
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, backgroundColor(), (isDown() || !engageable) ? 0.6 : 1.0);
 }
 
 // FrogPilot variables
+QColor ExperimentalButton::backgroundColor() const {
+  const FrogPilotUIScene &frogpilot_scene = frogpilotUIState()->frogpilot_scene;
+
+  if (!isDown() && engageable) {
+    if (frogpilot_scene.always_on_lateral_active) {
+      return bg_colors[STATUS_ALWAYS_ON_LATERAL_ACTIVE];
+    } else if (experimental_mode) {
+      return bg_colors[STATUS_EXPERIMENTAL_MODE_ENABLED];
+    }
+  }
+  return blackColor(166);
+}
