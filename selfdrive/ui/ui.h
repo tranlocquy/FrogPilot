@@ -120,6 +120,9 @@ public:
   }
 
   // FrogPilot variables
+  bool isDark() {
+    return dark;
+  }
 
 private:
   bool awake = false;
@@ -132,6 +135,7 @@ private:
   QFuture<void> brightness_future;
 
   // FrogPilot variables
+  bool dark = false;
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
