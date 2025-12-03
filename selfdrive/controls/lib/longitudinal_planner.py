@@ -48,6 +48,8 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   # FrogPilot variables
+  if abs(a_y) <= frogpilot_variables.MINIMUM_LATERAL_ACCELERATION:
+    a_x_allowed = a_target[1]
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
@@ -120,7 +122,7 @@ class LongitudinalPlanner:
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if mode == 'acc':
-      accel_clip = [ACCEL_MIN, get_max_accel(v_ego)]
+      accel_clip = [sm['frogpilotPlan'].minAcceleration, sm['frogpilotPlan'].maxAcceleration]
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
 
       # FrogPilot variables
@@ -141,6 +143,7 @@ class LongitudinalPlanner:
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
 
     # FrogPilot variables
+    mpc_accel_max = accel_clip[1]
 
     if not self.allow_throttle:
       clipped_accel_coast = max(accel_coast, accel_clip[0])
@@ -154,7 +157,7 @@ class LongitudinalPlanner:
 
     self.mpc.set_weights(sm['frogpilotPlan'].accelerationJerk, sm['frogpilotPlan'].dangerJerk, sm['frogpilotPlan'].speedJerk, prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(v_cruise, sm['radarState'], x, v, a, j, sm['frogpilotPlan'].tFollow, frogpilot_toggles, personality=sm['selfdriveState'].personality)
+    self.mpc.update(v_cruise, sm['radarState'], x, v, a, j, sm['frogpilotPlan'].tFollow, accel_clip[0], mpc_accel_max, force_slow_decel, frogpilot_toggles, personality=sm['selfdriveState'].personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
@@ -185,8 +188,8 @@ class LongitudinalPlanner:
 
     # FrogPilot variables
 
-    for idx in range(2):
-      accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
+    accel_clip[0] = min(accel_clip[0], self.prev_accel_clip[0] + 0.05)
+    accel_clip[1] = np.clip(accel_clip[1], self.prev_accel_clip[1] - 0.05, self.prev_accel_clip[1] + 0.05)
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
     self.prev_accel_clip = accel_clip
 
