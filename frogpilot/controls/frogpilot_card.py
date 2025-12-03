@@ -80,6 +80,7 @@ class FrogPilotCard:
     self.always_on_lateral_enabled &= not sm["frogpilotSelfdriveState"].hasDisableEvents
     self.always_on_lateral_enabled &= not any(event.name == EventName.tooDistracted for event in sm["onroadEvents"])
     self.always_on_lateral_enabled &= not (carState.brakePressed and carState.vEgo < frogpilot_toggles.always_on_lateral_pause_speed) or carState.standstill
+    self.always_on_lateral_enabled &= not frogpilot_variables.ERROR_LOG_PATH.is_file()
 
     if any(be.pressed and be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in carState.buttonEvents):
       self.accel_press_count += 1

@@ -80,6 +80,8 @@ class Soundd:
     # FrogPilot variables
     self.frogpilot_toggles = frogpilot_variables.get_frogpilot_toggles()
 
+    self.openpilot_crashed_played = False
+
     self.theme_update_count = 0
 
     self.ui_request_sock = messaging.sub_sock("frogpilotUIRequest")
@@ -156,6 +158,9 @@ class Soundd:
     test_alerts = [msg.frogpilotUIRequest.testAlert for msg in messaging.drain_sock(self.ui_request_sock) if msg.frogpilotUIRequest.which() == 'testAlert']
     if test_alerts:
       self.update_alert(getattr(AudibleAlert, test_alerts[-1]))
+    elif not self.openpilot_crashed_played and frogpilot_variables.ERROR_LOG_PATH.is_file():
+      self.update_alert(AudibleAlert.prompt)
+      self.openpilot_crashed_played = True
     elif sm.updated['selfdriveState']:
       new_alert = sm['selfdriveState'].alertSound.raw
 
