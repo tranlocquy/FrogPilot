@@ -122,6 +122,10 @@ FrogPilotDevicePanel::FrogPilotDevicePanel(FrogPilotSettingsWindow *parent, bool
   static_cast<ParamControl*>(toggles["NoLogging"])->setConfirmation(true, false);
   static_cast<ParamControl*>(toggles["NoUploads"])->setConfirmation(true, false);
 
+  if (QFile::exists("/data/openpilot/not_vetted")) {
+    static_cast<ParamControl*>(toggles["UseKonikServer"])->forceOn();
+  }
+
   QObject::connect(static_cast<FrogPilotButtonToggleControl*>(toggles["NoUploads"]), &FrogPilotButtonToggleControl::buttonClicked, this, &FrogPilotDevicePanel::updateToggles);
   QObject::connect(static_cast<ToggleControl*>(toggles["NoUploads"]), &ToggleControl::toggleFlipped, this, &FrogPilotDevicePanel::updateToggles);
 
@@ -147,6 +151,24 @@ FrogPilotDevicePanel::FrogPilotDevicePanel(FrogPilotSettingsWindow *parent, bool
   QObject::connect(static_cast<ToggleControl*>(toggles["HigherBitrate"]), &ToggleControl::toggleFlipped, updateHigherBitrate);
   QObject::connect(static_cast<FrogPilotButtonToggleControl*>(toggles["NoUploads"]), &FrogPilotButtonToggleControl::buttonClicked, updateHigherBitrate);
   QObject::connect(static_cast<ToggleControl*>(toggles["NoUploads"]), &ToggleControl::toggleFlipped, updateHigherBitrate);
+
+  QObject::connect(static_cast<ToggleControl*>(toggles["UseKonikServer"]), &ToggleControl::toggleFlipped, [this](bool state) {
+    if (!FrogPilotConfirmationDialog::toggleReboot(this)) {
+      return;
+    }
+
+    if (!isOpenpilotSteering()) {
+      QFile toggleFile("/cache/use_konik");
+      if (state) {
+        toggleFile.open(QIODevice::WriteOnly);
+        toggleFile.close();
+      } else {
+        toggleFile.remove();
+      }
+    }
+
+    FrogPilotConfirmationDialog::softReboot(this);
+  });
 
   openDescriptions(forceOpenDescriptions, toggles);
 

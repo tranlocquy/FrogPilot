@@ -8,6 +8,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
+from openpilot.system.athena.registration import register
 from openpilot.system.hardware import HARDWARE, PC
 
 from openpilot.frogpilot.assets.theme_manager import ThemeManager
@@ -26,8 +27,21 @@ def frogpilot_boot_functions(build_metadata, params):
 
   sync_flag_file(frogpilot_variables.HD_PATH, frogpilot_toggles.use_higher_bitrate)
 
+  sync_flag_file(frogpilot_variables.KONIK_PATH, frogpilot_toggles.use_konik_server)
+
   ThemeManager.copy_default_theme()
   ThemeManager(params).update_active_theme(time_validated=system_time_valid(), frogpilot_toggles=frogpilot_toggles)
+
+  if frogpilot_utilities.use_konik_server():
+    if params.get("KonikDongleId") is not None:
+      params.put("DongleId", params.get("KonikDongleId"))
+    else:
+      Process(target=register_konik, daemon=True).start()
+  elif params.get("KonikDongleId") is not None and params.get("DongleId") == params.get("KonikDongleId"):
+    if params.get("StockDongleId") is None:
+      params.remove("DongleId")
+    else:
+      params.put("DongleId", params.get("StockDongleId"))
 
   frogpilot_utilities.delete_path(frogpilot_variables.RESTORE_TEMP_PATH)
 
@@ -37,7 +51,8 @@ def frogpilot_boot_functions(build_metadata, params):
 def install_frogpilot():
   paths = [
     frogpilot_variables.ERROR_LOGS_PATH,
-    frogpilot_variables.HD_LOGS_PATH
+    frogpilot_variables.HD_LOGS_PATH,
+    frogpilot_variables.KONIK_LOGS_PATH
   ]
   for path in paths:
     path.mkdir(parents=True, exist_ok=True)
@@ -76,6 +91,10 @@ def migrate_params(params, params_cache):
     for key, (conversion, decimals) in metric_conversions.items():
       if params.get(key) is None and params_cache.get(key) is None:
         params.put(key, round(params.get_default_value(key) * conversion, decimals))
+
+
+def register_konik():
+  Params().put("KonikDongleId", register(register_konik=True))
 
 
 def run_frogsgomoo(build_metadata):

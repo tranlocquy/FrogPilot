@@ -1,6 +1,6 @@
 import os
 import requests
-API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+API_HOST = os.getenv('API_HOST', f"https://api.{'konik.ai' if os.path.isfile('/cache/use_konik') else 'commadotai.com'}")
 
 # TODO: this should be merged into common.api
 
