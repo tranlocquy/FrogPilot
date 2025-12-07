@@ -41,6 +41,10 @@ def manager_init() -> None:
     params.put_bool("RecordFront", True)
 
   # FrogPilot variables
+  params_cache = Params(str(frogpilot_variables.PARAMS_CACHE_PATH))
+
+  frogpilot_functions.migrate_params(params, params_cache)
+  frogpilot_functions.sync_params_cache(params, params_cache)
 
   # set unset params to their default value
   for k in params.all_keys():

@@ -53,4 +53,6 @@ private:
   FrogPilotParamValueControl *ceSpeedToggle;
 
   FrogPilotSettingsWindow *parent;
+
+  Params params;
 };
