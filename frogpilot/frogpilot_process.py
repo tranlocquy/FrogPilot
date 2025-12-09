@@ -9,7 +9,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.common.time_helpers import system_time_valid
 
-from openpilot.frogpilot.common import frogpilot_api, frogpilot_utilities
+from openpilot.frogpilot.common import frogpilot_api, frogpilot_utilities, frogpilot_variables
 from openpilot.frogpilot.controls.frogpilot_planner import FrogPilotPlanner
 from openpilot.frogpilot.system.frogpilot_stats import send_stats
 from openpilot.frogpilot.system.frogpilot_tracking import FrogPilotTracking
@@ -62,6 +62,9 @@ def update_checks(now, thread_manager, sm, params, frogpilot_toggles, boot_run=F
   while not (frogpilot_utilities.is_url_pingable("https://github.com") or frogpilot_utilities.is_url_pingable("https://gitlab.com")):
     time.sleep(60)
 
+def update_toggles(variables, started):
+  variables.update(started=started)
+
 def frogpilot_thread():
   pm = messaging.PubMaster(["frogpilotPlan", "frogpilotProcessState"])
   sm = messaging.SubMaster(["carControl", "carState", "controlsState", "deviceState",
@@ -74,13 +77,17 @@ def frogpilot_thread():
 
   api = frogpilot_api.FrogPilotAPI(params)
   api.register_device()
+  variables = frogpilot_variables.FrogPilotVariables()
   thread_manager = frogpilot_utilities.ThreadManager()
 
   frogpilot_requests = FrogPilotRequests()
 
+  frogpilot_toggles = variables.frogpilot_toggles
+
   run_update_checks = False
   started_previously = False
   time_validated = False
+  waiting_for_car_params = False
 
   previous_update_checks_period = None
 
@@ -94,6 +101,7 @@ def frogpilot_thread():
     if not started and started_previously:
       frogpilot_tracking.save_stats()
 
+      update_toggles(variables, started)
       transition_offroad(frogpilot_planner, thread_manager, time_validated, params, frogpilot_toggles, api)
 
       run_update_checks = True
@@ -103,19 +111,29 @@ def frogpilot_thread():
 
       transition_onroad()
 
+      waiting_for_car_params = True
+
     if started and sm.updated["modelV2"]:
-      frogpilot_planner.update(now, time_validated, sm)
-      frogpilot_planner.publish(sm, pm)
+      frogpilot_planner.update(now, time_validated, sm, frogpilot_toggles)
+      frogpilot_planner.publish(sm, pm, frogpilot_toggles, variables.toggles_json)
 
       frogpilot_tracking.update(now, time_validated, sm)
     elif not started:
       frogpilot_plan_send = messaging.new_message("frogpilotPlan")
+      frogpilot_plan_send.frogpilotPlan.frogpilotToggles = variables.toggles_json
       pm.send("frogpilotPlan", frogpilot_plan_send)
 
     started_previously = started
 
     toggles_updated, update_checks_requested = frogpilot_requests.update()
     frogpilot_requests.publish(pm)
+
+    toggles_updated |= waiting_for_car_params and sm.updated["frogpilotCarParams"]
+
+    waiting_for_car_params &= not sm.updated["frogpilotCarParams"]
+
+    if toggles_updated:
+      update_toggles(variables, started)
 
     update_checks_period = now.hour
 
