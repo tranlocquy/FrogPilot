@@ -183,6 +183,8 @@ void FrogPilotAnnotatedCameraWidget::updateState(const UIState &s, const FrogPil
   experimentalMode = selfdriveState.getExperimentalMode();
   forceCoast = frogpilotCarState.getForceCoast();
   gpsBearing = frogpilotPlan.getGpsBearing();
+  laneWidthLeft = frogpilotPlan.getLaneWidthLeft();
+  laneWidthRight = frogpilotPlan.getLaneWidthRight();
   redLight = frogpilotPlan.getRedLight();
   roadCurvature = frogpilotPlan.getRoadCurvature();
   vEgo = carState.getVEgo();
