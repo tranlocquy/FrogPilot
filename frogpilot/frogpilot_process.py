@@ -9,15 +9,19 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.common.time_helpers import system_time_valid
 
-from openpilot.frogpilot.common import frogpilot_api, frogpilot_utilities, frogpilot_variables
+from openpilot.frogpilot.common import frogpilot_api, frogpilot_backups, frogpilot_utilities, frogpilot_variables
 from openpilot.frogpilot.controls.frogpilot_planner import FrogPilotPlanner
 from openpilot.frogpilot.system.frogpilot_stats import send_stats
 from openpilot.frogpilot.system.frogpilot_tracking import FrogPilotTracking
 
 class FrogPilotRequests:
-  def __init__(self):
+  def __init__(self, thread_manager):
+    self.thread_manager = thread_manager
+
     self.the_pond_request_sock = messaging.sub_sock("thePondRequest")
     self.ui_request_sock = messaging.sub_sock("frogpilotUIRequest")
+
+    self.settings_backup = ""
 
     self.pending = {}
     self.request_times = {}
@@ -30,18 +34,41 @@ class FrogPilotRequests:
     self.request_times[kind], request = pending
     return request
 
-  def update(self):
+  def run_settings_backup(self, function, params, argument):
+    try:
+      function(params, argument)
+      self.settings_backup = "succeeded"
+    except Exception:
+      self.settings_backup = "failed"
+      raise
+
+  def update(self, params):
     for msg in messaging.drain_sock(self.ui_request_sock):
       self.pending[msg.frogpilotUIRequest.which()] = (msg.logMonoTime, msg.frogpilotUIRequest)
 
     for msg in messaging.drain_sock(self.the_pond_request_sock):
       self.pending[msg.thePondRequest.request.which()] = (msg.logMonoTime, msg.thePondRequest.request)
 
+    if not self.thread_manager.is_thread_alive("run_settings_backup"):
+      request = self.take("createSettingsBackup")
+      if request is not None:
+        self.settings_backup = "pending"
+        self.thread_manager.run_in_thread(self.run_settings_backup, (frogpilot_backups.create_settings_backup, params, request.createSettingsBackup))
+      else:
+        request = self.take("restoreSettingsBackup")
+        if request is not None:
+          self.settings_backup = "pending"
+          self.thread_manager.run_in_thread(self.run_settings_backup, (frogpilot_backups.restore_settings_backup, params,
+                                                                      frogpilot_variables.TOGGLE_BACKUPS / request.restoreSettingsBackup))
+
     return self.take("updateToggles") is not None, self.take("updateChecks") is not None
 
   def publish(self, pm):
     frogpilot_process_state_send = messaging.new_message("frogpilotProcessState")
     frogpilotProcessState = frogpilot_process_state_send.frogpilotProcessState
+
+    frogpilotProcessState.settingsBackup = self.settings_backup
+    frogpilotProcessState.settingsBackupRequestTime = max(self.request_times.get("createSettingsBackup", 0), self.request_times.get("restoreSettingsBackup", 0))
 
     pm.send("frogpilotProcessState", frogpilot_process_state_send)
 
@@ -62,8 +89,11 @@ def update_checks(now, thread_manager, sm, params, frogpilot_toggles, boot_run=F
   while not (frogpilot_utilities.is_url_pingable("https://github.com") or frogpilot_utilities.is_url_pingable("https://gitlab.com")):
     time.sleep(60)
 
-def update_toggles(variables, started):
+def update_toggles(variables, started, thread_manager, time_validated, params):
   variables.update(started=started)
+
+  if time_validated:
+    thread_manager.run_in_thread(frogpilot_backups.backup_toggles, (params,))
 
 def frogpilot_thread():
   pm = messaging.PubMaster(["frogpilotPlan", "frogpilotProcessState"])
@@ -80,7 +110,7 @@ def frogpilot_thread():
   variables = frogpilot_variables.FrogPilotVariables()
   thread_manager = frogpilot_utilities.ThreadManager()
 
-  frogpilot_requests = FrogPilotRequests()
+  frogpilot_requests = FrogPilotRequests(thread_manager)
 
   frogpilot_toggles = variables.frogpilot_toggles
 
@@ -101,7 +131,7 @@ def frogpilot_thread():
     if not started and started_previously:
       frogpilot_tracking.save_stats()
 
-      update_toggles(variables, started)
+      update_toggles(variables, started, thread_manager, time_validated, params)
       transition_offroad(frogpilot_planner, thread_manager, time_validated, params, frogpilot_toggles, api)
 
       run_update_checks = True
@@ -125,7 +155,7 @@ def frogpilot_thread():
 
     started_previously = started
 
-    toggles_updated, update_checks_requested = frogpilot_requests.update()
+    toggles_updated, update_checks_requested = frogpilot_requests.update(params)
     frogpilot_requests.publish(pm)
 
     toggles_updated |= waiting_for_car_params and sm.updated["frogpilotCarParams"]
@@ -133,7 +163,7 @@ def frogpilot_thread():
     waiting_for_car_params &= not sm.updated["frogpilotCarParams"]
 
     if toggles_updated:
-      update_toggles(variables, started)
+      update_toggles(variables, started, thread_manager, time_validated, params)
 
     update_checks_period = now.hour
 
@@ -151,6 +181,7 @@ def frogpilot_thread():
       time_validated = system_time_valid()
 
       if time_validated:
+        thread_manager.run_in_thread(frogpilot_backups.backup_toggles, (params, True))
         thread_manager.run_in_thread(send_stats, (params, frogpilot_toggles, api))
         thread_manager.run_in_thread(update_checks, (now, thread_manager, sm, params, frogpilot_toggles, True))
 
