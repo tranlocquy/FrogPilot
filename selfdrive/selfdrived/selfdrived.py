@@ -531,6 +531,10 @@ class SelfdriveD:
     ss.alertHudVisual = self.AM.current_alert.visual_alert or self.frogpilot_AM.current_alert.visual_alert
 
     # FrogPilot variables
+    if self.frogpilot_toggles.conditional_experimental_mode:
+      ss.experimentalMode = self.sm['frogpilotPlan'].experimentalMode
+    else:
+      ss.experimentalMode = self.experimental_mode or self.sm['frogpilotPlan'].experimentalMode
 
     self.pm.send('selfdriveState', ss_msg)
 
