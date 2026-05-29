@@ -14,7 +14,7 @@ from opendbc.car.ford.values import FordSafetyFlags
 from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFrogPilotSafetyFlags
 from opendbc.car.mock.values import CAR as MOCK
-from opendbc.car.toyota.values import ToyotaFrogPilotSafetyFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import ToyotaFrogPilotFlags, ToyotaFrogPilotSafetyFlags, ToyotaSafetyFlags
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
@@ -183,6 +183,10 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   from openpilot.frogpilot.common import frogpilot_variables
 
   FPCP: FrogPilotCarParams = CarInterface.get_frogpilot_params(candidate, fingerprints, car_fw, CP, frogpilot_toggles)
+
+  if CP.brand == "toyota" and FPCP.flags & ToyotaFrogPilotFlags.DSU_BYPASS.value:
+    CP.openpilotLongitudinalControl = True
+    CP.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
 
   if frogpilot_variables.can_disable_openpilot_long(CP) and not CP.alphaLongitudinalAvailable and frogpilot_toggles.disable_openpilot_long:
     FPCP.openpilotLongitudinalControlDisabled = CP.openpilotLongitudinalControl
