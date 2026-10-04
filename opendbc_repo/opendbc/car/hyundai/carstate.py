@@ -6,7 +6,7 @@ from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams, HyundaiFrogPilotSafetyFlags
 from opendbc.car.interfaces import CarStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -78,6 +78,8 @@ class CarState(CarStateBase):
 
     # FrogPilot variables
     self.drive_mode = 0
+
+    self.taco_tune_hack = bool(CP.safetyConfigs[-1].safetyParam & HyundaiFrogPilotSafetyFlags.TACO_TUNE_HACK)
 
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -320,6 +322,9 @@ class CarState(CarStateBase):
 
     # FrogPilot variables
     self.distance_button = self.cruise_buttons[-1] == Buttons.GAP_DIST
+
+    if self.taco_tune_hack:
+      self.params = CarControllerParams(self.CP, ret.vEgoRaw, self.frogpilot_toggles.taco_tune_hacks)
 
     self.fp_ret.brakeLights = bool(cp.vl["TCS"]["DriverBraking"])
     if self.FPCP.hasDashboardSpeedLimit:
