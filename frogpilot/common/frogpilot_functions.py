@@ -75,6 +75,11 @@ def migrate_params(params, params_cache):
         params.put(key, round(params.get_default_value(key) * conversion, decimals))
 
 
+def run_frogsgomoo(build_metadata):
+  if frogpilot_utilities.is_FrogsGoMoo_development(build_metadata):
+    frogpilot_utilities.run_cmd_on_writable_mount("/persist", ["sudo", "python3", frogpilot_variables.FROGS_GO_MOO_PATH], "Failed to run frogsgomoo.py")
+
+
 def sync_params_cache(params, params_cache):
   for key in params.all_keys():
     current_value = params.get(key)
