@@ -18,6 +18,9 @@ def capture_report(report, frogpilot_toggles, frogpilot_api):
       "report_id": str(uuid.uuid4()),
       "report_schema_version": 1,
     }
+    if "Route" in report:
+      payload["route"] = report["Route"]
+
     report = {"payload": json.dumps(payload)}
 
   response = frogpilot_api.post("/v1/reports", data=report["payload"], headers={"Content-Type": "application/json"}, timeout=30)

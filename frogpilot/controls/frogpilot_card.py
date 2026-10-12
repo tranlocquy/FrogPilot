@@ -129,6 +129,7 @@ class FrogPilotCard:
     frogpilotCarState.experimentalModePressCount = self.experimental_mode_press_count
     frogpilotCarState.forceCoast = self.force_coast
     frogpilotCarState.lkasButtonPressCount = self.lkas_button_press_count
+    frogpilotCarState.parked = carState.gearShifter == frogpilot_variables.GearShifter.park
     frogpilotCarState.pauseLateral = self.pause_lateral
     frogpilotCarState.pauseLongitudinal = self.pause_longitudinal
     frogpilotCarState.vEgo = carState.vEgo

@@ -129,6 +129,9 @@ from openpilot.system.manager.process_config import managed_processes
 
 for process in managed_processes.values():
   if isinstance(process, NativeProcess):
+    if os.path.isabs(process.cwd):
+      continue
+
     command = next(argument for argument in process.cmdline if argument.startswith("./"))
     executable = os.path.join(process.cwd, command)
     assert os.access(executable, os.X_OK), process.name
