@@ -50,7 +50,9 @@ def register(show_spinner=False, register_konik=False) -> str | None:
     cloudlog.warning("missing public key")
 
     # FrogPilot variables
-  elif dongle_id is None or register_konik:
+    params.remove("DongleId")
+    return dongle_id
+  elif dongle_id in (None, UNREGISTERED_DONGLE_ID) or register_konik:
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
@@ -96,6 +98,9 @@ def register(show_spinner=False, register_konik=False) -> str | None:
         spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
         # FrogPilot variables
+        spinner.close()
+        params.remove("DongleId")
+        return UNREGISTERED_DONGLE_ID
 
     if show_spinner:
       spinner.close()
