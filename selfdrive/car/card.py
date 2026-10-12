@@ -24,6 +24,7 @@ from openpilot.selfdrive.car.car_specific import MockCarState
 
 from openpilot.frogpilot.common import frogpilot_variables
 from openpilot.frogpilot.controls.frogpilot_card import FrogPilotCard
+from openpilot.system import sentry
 
 REPLAY = "REPLAY" in os.environ
 
@@ -159,6 +160,9 @@ class Car:
 
     if not self.CP.passive and self.frogpilot_toggles.always_on_lateral:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
+
+    if self.frogpilot_toggles.block_user:
+      sentry.capture_message(f"Blocked user from using the {frogpilot_variables.PR_BRANCH} branch", level="info")
 
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()

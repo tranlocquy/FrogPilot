@@ -163,6 +163,9 @@ class SelfdriveD:
     # FrogPilot variables
     self.frogpilot_events.clear()
 
+    if self.frogpilot_toggles.block_user:
+      self.frogpilot_events.add(FrogPilotEventName.blockUser)
+
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
