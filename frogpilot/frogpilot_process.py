@@ -17,6 +17,7 @@ from openpilot.frogpilot.system.frogpilot_stats import send_stats
 from openpilot.frogpilot.system.frogpilot_tracking import FrogPilotTracking
 from openpilot.frogpilot.system.model_manager import ModelManager
 from openpilot.frogpilot.system.reporting import capture_report
+from openpilot.frogpilot.system.speed_limit_reader_models import SpeedLimitReaderModels
 
 class FrogPilotRequests:
   def __init__(self, cancel_maps_download, model_manager, theme_manager, thread_manager):
@@ -203,7 +204,7 @@ def transition_onroad():
 
   frogpilot_variables.ERROR_LOG_PATH.unlink(missing_ok=True)
 
-def update_checks(now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, boot_run=False):
+def update_checks(now, model_manager, speed_limit_reader_models, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, boot_run=False):
   while not (frogpilot_utilities.is_url_pingable("https://github.com") or frogpilot_utilities.is_url_pingable("https://gitlab.com")):
     time.sleep(60)
 
@@ -218,6 +219,9 @@ def update_checks(now, model_manager, theme_manager, thread_manager, sm, params,
 
   with model_manager.download_lock:
     model_manager.update_models(not sm["deviceState"].networkMetered and frogpilot_toggles.automatically_download_models)
+
+  if frogpilot_toggles.speed_limit_controller:
+    speed_limit_reader_models.update(sm)
 
 def update_toggles(variables, started, model_manager, theme_manager, thread_manager, time_validated, params):
   frogpilot_toggles = variables.frogpilot_toggles
@@ -255,6 +259,7 @@ def frogpilot_thread():
   api.register_device()
   variables = frogpilot_variables.FrogPilotVariables()
   model_manager = ModelManager(params)
+  speed_limit_reader_models = SpeedLimitReaderModels(params)
   theme_manager = ThemeManager(params)
   thread_manager = frogpilot_utilities.ThreadManager()
 
@@ -339,7 +344,7 @@ def frogpilot_thread():
 
     if run_update_checks:
       theme_manager.update_active_theme(time_validated, frogpilot_toggles)
-      thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles))
+      thread_manager.run_in_thread(update_checks, (now, model_manager, speed_limit_reader_models, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles))
 
       run_update_checks = False
     elif not time_validated:
@@ -350,7 +355,7 @@ def frogpilot_thread():
 
         thread_manager.run_in_thread(frogpilot_backups.backup_toggles, (params, True))
         thread_manager.run_in_thread(send_stats, (params, frogpilot_toggles, api))
-        thread_manager.run_in_thread(update_checks, (now, model_manager, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, True))
+        thread_manager.run_in_thread(update_checks, (now, model_manager, speed_limit_reader_models, theme_manager, thread_manager, sm, params, cancel_maps_download, frogpilot_toggles, True))
 
 def main():
   frogpilot_thread()

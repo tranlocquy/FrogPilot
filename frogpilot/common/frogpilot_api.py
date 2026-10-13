@@ -56,6 +56,9 @@ class FrogPilotAPI:
     except requests.exceptions.RequestException:
       return None
 
+  def get(self, path, headers=None, session=requests, **kwargs):
+    return self.request("GET", path, headers=headers, session=session, **kwargs)
+
   def post(self, path, headers=None, session=requests, **kwargs):
     return self.request("POST", path, headers=headers, session=session, **kwargs)
 
