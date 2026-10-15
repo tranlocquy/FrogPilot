@@ -308,6 +308,26 @@ QString formatDistance(double meters, bool isMetric) {
   return QLocale().toString(value) + unit;
 }
 
+QString formatDownloadProgress(const std::string &progress, const QString &updaterState) {
+  QJsonObject progressObject = QJsonDocument::fromJson(QByteArray::fromStdString(progress)).object();
+  if (!progressObject.contains("percent")) {
+    return updaterState;
+  }
+
+  QString result = QString("%1%").arg(progressObject.value("percent").toInt());
+
+  QJsonValue eta = progressObject.value("eta");
+  if (eta.isDouble()) {
+    int seconds = eta.toInt();
+    if (seconds < 60) {
+      result += QCoreApplication::translate("SoftwarePanel", " · less than a minute left");
+    } else {
+      result += QCoreApplication::translate("SoftwarePanel", " · about %1 min left").arg(qRound(seconds / 60.0));
+    }
+  }
+  return result;
+}
+
 QString formatDuration(int seconds) {
   const int secondsInDay = 60 * 60 * 24;
   const int secondsInHour = 60 * 60;

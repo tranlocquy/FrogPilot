@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pickle
 import requests
+import shutil
 import subprocess
 import threading
 import time
@@ -54,6 +55,111 @@ class ThreadManager:
     with self.thread_lock:
       thread = self.running_threads.get(name)
       return thread is not None and thread.is_alive()
+
+
+class UpdateProgress:
+  def __init__(self, params):
+    self.params = params
+
+    self.agnos_size = 0
+    self.copied = 0
+    self.copy_total = 0
+    self.download_percent = 0
+
+    self.agnos_written = {}
+
+    self.agnos_started = None
+    self.copy_finished = None
+    self.copy_started = None
+    self.download_finished = None
+
+    self.started = time.monotonic()
+
+    threading.Thread(target=self.publish, daemon=True).start()
+
+  def copy_file(self, source, destination):
+    with open(source, "rb") as source_file, open(destination, "wb") as destination_file:
+      while chunk := source_file.read(shutil.COPY_BUFSIZE):
+        destination_file.write(chunk)
+        self.copied += len(chunk)
+
+    shutil.copystat(source, destination)
+
+  def copy_tree(self, source, destination):
+    self.copy_total = get_directory_size(source)
+    self.copy_started = time.monotonic()
+
+    shutil.copytree(source, destination, symlinks=True, copy_function=self.copy_file)
+
+    self.copy_finished = time.monotonic()
+
+    copy_time = self.copy_finished - self.copy_started
+    average = self.params.get("UpdaterCopySeconds")
+    if average is not None:
+      copy_time = average + (copy_time - average) * frogpilot_variables.UPDATE_COPY_AVERAGE_WEIGHT
+    self.params.put("UpdaterCopySeconds", round(copy_time, 1))
+
+  def get_remaining(self, now):
+    if self.copy_finished is not None:
+      return max((self.copy_finished - self.copy_started) * frogpilot_variables.UPDATE_CLEANUP_RATIO - (now - self.copy_finished), 0)
+
+    copy_time = self.params.get("UpdaterCopySeconds") or frogpilot_variables.UPDATE_COPY_SECONDS
+
+    if self.copy_started is not None:
+      return copy_time * (1 - self.copied / self.copy_total + frogpilot_variables.UPDATE_CLEANUP_RATIO)
+
+    install_time = copy_time * (1 + frogpilot_variables.UPDATE_CLEANUP_RATIO)
+
+    if self.agnos_started is not None:
+      agnos_written = sum(self.agnos_written.values())
+      if agnos_written == 0:
+        return None
+      return (now - self.agnos_started) * (self.agnos_size - agnos_written) / agnos_written + install_time
+
+    if self.download_finished is not None:
+      return install_time
+
+    if self.download_percent == 0:
+      return None
+
+    elapsed = now - self.started
+    return elapsed * (100 - self.download_percent) / self.download_percent + install_time
+
+  def publish(self):
+    percent = 0
+
+    published = None
+
+    while self.params.get("UpdaterState") != "idle":
+      now = time.monotonic()
+      elapsed = now - self.started
+      remaining = self.get_remaining(now)
+
+      eta = None
+      if remaining is not None:
+        target = min(int(100 * elapsed / (elapsed + remaining)), 99)
+        percent = max(percent, min(target, percent + 1))
+
+        if elapsed >= frogpilot_variables.UPDATE_ETA_MIN_SECONDS:
+          eta = round(remaining)
+
+      progress = {"eta": eta, "percent": percent}
+
+      if progress != published:
+        self.params.put("UpdaterDownloadProgress", progress)
+        published = progress
+
+      time.sleep(frogpilot_variables.UPDATE_PROGRESS_INTERVAL)
+
+    self.params.remove("UpdaterDownloadProgress")
+
+  def report_agnos(self, partition, written):
+    self.agnos_written[partition["name"]] = written
+
+  def start_agnos(self, manifest_path):
+    with open(manifest_path) as manifest:
+      self.agnos_size = sum(partition["size"] for partition in json.load(manifest))
+    self.agnos_started = time.monotonic()
 
 
 def calculate_curve_speed(road_curvature, lateral_acceleration, roll_compensation):
@@ -311,6 +417,24 @@ def run_cmd_on_writable_mount(mount_point, cmd, fail_message):
   run_cmd(["sudo", "mount", "-o", "remount,rw", mount_point], f"Failed to remount {mount_point}")
   run_cmd(cmd, fail_message)
   run_cmd(["sudo", "mount", "-o", f"remount,{mount_options}", mount_point], f"Failed to restore {mount_point} mount options")
+
+
+def run_git_with_progress(cmd, cwd, update_progress):
+  output = []
+
+  with subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf8") as process:
+    for line in process.stdout:
+      progress = frogpilot_variables.GIT_PROGRESS_PATTERN.match(line)
+      if progress is None:
+        if frogpilot_variables.GIT_PROGRESS_SUMMARY_PATTERN.match(line) is None:
+          output.append(line)
+      elif progress["phase"] == "Receiving objects":
+        update_progress.download_percent = int(progress["percent"])
+  update_progress.download_finished = time.monotonic()
+
+  if process.returncode != 0:
+    raise subprocess.CalledProcessError(process.returncode, cmd, output="".join(output))
+  return "".join(output)
 
 
 def send_door_command(lock):
