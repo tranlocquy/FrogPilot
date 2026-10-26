@@ -529,10 +529,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                                        priority=Priority.HIGH),
   },
 
-  EventName.dashcamMode: {
-    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
-                                       priority=Priority.LOWEST),
-  },
+  EventName.dashcamMode: {},
 
   EventName.invalidLkasSetting: {
     ET.PERMANENT: invalid_lkas_setting_alert,
