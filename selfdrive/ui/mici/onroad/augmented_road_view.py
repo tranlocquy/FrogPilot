@@ -6,6 +6,7 @@ from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
+from openpilot.selfdrive.ui.onroad.can_renderer import CanRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
@@ -152,6 +153,7 @@ class AugmentedRoadView(CameraView):
     self._model_renderer = ModelRenderer()
     self._hud_renderer = HudRenderer()
     self._alert_renderer = AlertRenderer()
+    self._can_renderer = CanRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
@@ -228,6 +230,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     # TODO: have alert renderer draw offroad mici label below
+    self._can_renderer.render(self._content_rect)
     if ui_state.started:
       self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
